@@ -1,0 +1,76 @@
+{
+  "buttons": {
+    "name": "Buttons",
+    "processes": ["buttonhole_button_attach"],
+    "machines": ["M022", "M023"],
+    "sewing_methods": ["button_hole", "button_stitch"]
+  },
+  "zipper": {
+    "name": "Zipper",
+    "processes": ["zipper_attachment"],
+    "machines": ["M024"],
+    "sewing_methods": ["zipper_attachment"]
+  },
+  "pockets": {
+    "name": "Pockets",
+    "processes": ["bartacking"],
+    "machines": ["M025"],
+    "sewing_methods": ["bartack"]
+  },
+  "elastic_waist": {
+    "name": "Elastic Waist",
+    "processes": [],
+    "machines": ["M048"],
+    "sewing_methods": ["elastic_attachment"]
+  },
+  "hood": {
+    "name": "Hood",
+    "processes": [],
+    "machines": ["M026"],
+    "sewing_methods": ["feed_off_arm"]
+  },
+  "lining": {
+    "name": "Lining",
+    "processes": [],
+    "sewing_methods": ["lockstitch", "blind_stitch"]
+  },
+  "collar": {
+    "name": "Collar",
+    "processes": [],
+    "sewing_methods": ["lockstitch"]
+  },
+  "cuffs": {
+    "name": "Cuffs",
+    "processes": [],
+    "sewing_methods": ["lockstitch", "button_hole"]
+  },
+  "snaps": {
+    "name": "Snap Fasteners",
+    "processes": [],
+    "machines": ["M047"],
+    "sewing_methods": []
+  },
+  "belt_loops": {
+    "name": "Belt Loops",
+    "processes": ["bartacking"],
+    "machines": ["M025"],
+    "sewing_methods": ["bartack"]
+  },
+  "rivets": {
+    "name": "Rivets",
+    "processes": [],
+    "machines": ["M047"],
+    "sewing_methods": []
+  },
+  "neck_rib": {
+    "name": "Neck Rib",
+    "processes": [],
+    "machines": ["M020", "M026"],
+    "sewing_methods": ["overlock", "feed_off_arm"]
+  },
+  "drawstrings": {
+    "name": "Drawstrings",
+    "processes": [],
+    "sewing_methods": ["lockstitch"]
+  }
+}

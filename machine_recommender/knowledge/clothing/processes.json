@@ -1,0 +1,178 @@
+[
+  {
+    "id": "fabric_inspection",
+    "name": "Fabric Inspection",
+    "description": "Inspect incoming fabric rolls for defects, stains, shrinkage, and quality before production",
+    "sequence": 1,
+    "optional": false,
+    "machine_ids": ["M001"]
+  },
+  {
+    "id": "fabric_relaxation",
+    "name": "Fabric Relaxation",
+    "description": "Allow fabric to relax and release manufacturing tension, especially for knitted fabrics",
+    "sequence": 2,
+    "optional": false,
+    "machine_ids": ["M002"]
+  },
+  {
+    "id": "pattern_making",
+    "name": "Pattern Making",
+    "description": "Create garment patterns using CAD software and print them for production",
+    "sequence": 3,
+    "optional": false,
+    "machine_ids": ["M003", "M004"]
+  },
+  {
+    "id": "marker_planning",
+    "name": "Marker Planning",
+    "description": "Optimize pattern layout on fabric to minimize waste using CAD marker software",
+    "sequence": 4,
+    "optional": false,
+    "machine_ids": ["M005"]
+  },
+  {
+    "id": "fusing",
+    "name": "Fusing",
+    "description": "Bond interlining to specific fabric parts for stiffness and shape retention",
+    "sequence": 5,
+    "optional": true,
+    "machine_ids": ["M040"]
+  },
+  {
+    "id": "fabric_spreading",
+    "name": "Fabric Spreading",
+    "description": "Spread fabric in multiple layers on the cutting table",
+    "sequence": 6,
+    "optional": false,
+    "machine_ids": ["M006", "M007"]
+  },
+  {
+    "id": "fabric_cutting",
+    "name": "Fabric Cutting",
+    "description": "Cut fabric layers according to pattern pieces",
+    "sequence": 7,
+    "optional": false,
+    "machine_ids": ["M008", "M009", "M010", "M011", "M012"]
+  },
+  {
+    "id": "printing",
+    "name": "Printing",
+    "description": "Apply printed designs, patterns, or graphics to the fabric or garment",
+    "sequence": 8,
+    "optional": true,
+    "machine_ids": ["M013", "M014", "M015", "M016"]
+  },
+  {
+    "id": "embroidery",
+    "name": "Embroidery",
+    "description": "Stitch embroidered logos or decorative patterns onto the garment",
+    "sequence": 9,
+    "optional": true,
+    "machine_ids": ["M017", "M018"]
+  },
+  {
+    "id": "washing",
+    "name": "Washing",
+    "description": "Wash garments for effects such as stone wash, enzyme wash, or general garment wash",
+    "sequence": 13,
+    "optional": true,
+    "machine_ids": ["M043", "M045"]
+  },
+  {
+    "id": "drying",
+    "name": "Drying",
+    "description": "Dry garments after washing processes",
+    "sequence": 14,
+    "optional": true,
+    "machine_ids": ["M044"]
+  },
+  {
+    "id": "sewing",
+    "name": "Sewing",
+    "description": "Join fabric pieces together using various industrial sewing machines",
+    "sequence": 12,
+    "optional": false,
+    "machine_ids": ["M019", "M020", "M021", "M026", "M048", "M049", "M050"]
+  },
+  {
+    "id": "buttonhole_button_attach",
+    "name": "Buttonhole and Button Attachment",
+    "description": "Create buttonholes and attach buttons for polos, shirts, trousers, and jackets",
+    "sequence": 12,
+    "optional": false,
+    "machine_ids": ["M022", "M023"]
+  },
+  {
+    "id": "zipper_attachment",
+    "name": "Zipper Attachment",
+    "description": "Attach zippers to flies, pockets, jackets, hoodies, skirts, or dresses",
+    "sequence": 12,
+    "optional": false,
+    "machine_ids": ["M024"]
+  },
+  {
+    "id": "bartacking",
+    "name": "Bartacking",
+    "description": "Reinforce high-stress areas such as pockets, belt loops, and fly seams",
+    "sequence": 12,
+    "optional": false,
+    "machine_ids": ["M025"]
+  },
+  {
+    "id": "drawcord_eyelet_attach",
+    "name": "Drawcord and Eyelet Attachment",
+    "description": "Install eyelets and drawcords for hooded or waist-adjustable garments",
+    "sequence": 12,
+    "optional": false,
+    "machine_ids": ["M051", "M052"]
+  },
+  {
+    "id": "trimming",
+    "name": "Trimming",
+    "description": "Trim excess threads, attach labels, and finish garment edges",
+    "sequence": 15,
+    "optional": false,
+    "machine_ids": ["M027", "M028", "M041", "M042"]
+  },
+  {
+    "id": "ironing",
+    "name": "Ironing",
+    "description": "Press and iron the garment to remove wrinkles and achieve proper shape",
+    "sequence": 16,
+    "optional": false,
+    "machine_ids": ["M029", "M030", "M031", "M032"]
+  },
+  {
+    "id": "sandblasting",
+    "name": "Sandblasting",
+    "description": "Apply abrasive treatment for distressed or vintage finishes",
+    "sequence": 17,
+    "optional": true,
+    "machine_ids": ["M046"]
+  },
+  {
+    "id": "quality_inspection",
+    "name": "Quality Inspection",
+    "description": "Inspect finished garment for defects, measurements, and quality standards",
+    "sequence": 18,
+    "optional": false,
+    "machine_ids": ["M033", "M034"]
+  },
+  {
+    "id": "folding",
+    "name": "Folding",
+    "description": "Fold garments to standard size for packaging",
+    "sequence": 19,
+    "optional": false,
+    "machine_ids": ["M035", "M036"]
+  },
+  {
+    "id": "packaging",
+    "name": "Packaging",
+    "description": "Bag, pack, and seal garments in cartons for shipment",
+    "sequence": 20,
+    "optional": false,
+    "machine_ids": ["M037", "M038", "M039"]
+  }
+]

@@ -1,0 +1,156 @@
+{
+  "cotton": {
+    "name": "Cotton",
+    "fabric_structure": "knitted",
+    "weight": "medium",
+    "stretch": false,
+    "needs_relaxation": true,
+    "needs_fusing": false,
+    "cutting_methods": ["straight_knife", "band_knife", "cnc"],
+    "sewing_methods": ["overlock", "flatlock", "interlock", "lockstitch", "coverstitch"],
+    "special_processes": []
+  },
+  "cotton_woven": {
+    "name": "Cotton Woven",
+    "fabric_structure": "woven",
+    "weight": "medium",
+    "stretch": false,
+    "needs_relaxation": false,
+    "needs_fusing": true,
+    "cutting_methods": ["straight_knife", "die_cutting", "cnc"],
+    "sewing_methods": ["lockstitch", "overlock", "button_hole", "button_stitch", "blind_stitch"],
+    "special_processes": []
+  },
+  "denim": {
+    "name": "Denim",
+    "fabric_structure": "woven",
+    "weight": "heavy",
+    "stretch": false,
+    "needs_relaxation": false,
+    "needs_fusing": false,
+    "cutting_methods": ["straight_knife", "band_knife", "cnc"],
+    "sewing_methods": ["lockstitch", "overlock", "bartack", "button_hole", "button_stitch", "blind_stitch"],
+    "special_processes": ["washing", "drying", "sandblasting"]
+  },
+  "polyester": {
+    "name": "Polyester",
+    "fabric_structure": "knitted",
+    "weight": "light",
+    "stretch": true,
+    "needs_relaxation": true,
+    "needs_fusing": false,
+    "cutting_methods": ["straight_knife", "laser", "cnc"],
+    "sewing_methods": ["overlock", "flatlock", "interlock", "lockstitch", "coverstitch"],
+    "special_processes": []
+  },
+  "polyester_woven": {
+    "name": "Polyester Woven",
+    "fabric_structure": "woven",
+    "weight": "light",
+    "stretch": false,
+    "needs_relaxation": false,
+    "needs_fusing": true,
+    "cutting_methods": ["straight_knife", "laser", "cnc"],
+    "sewing_methods": ["lockstitch", "overlock", "blind_stitch"],
+    "special_processes": []
+  },
+  "silk": {
+    "name": "Silk",
+    "fabric_structure": "woven",
+    "weight": "light",
+    "stretch": false,
+    "needs_relaxation": false,
+    "needs_fusing": true,
+    "cutting_methods": ["straight_knife", "band_knife"],
+    "sewing_methods": ["lockstitch", "blind_stitch", "overlock"],
+    "special_processes": ["finishing_tunnel"]
+  },
+  "wool": {
+    "name": "Wool",
+    "fabric_structure": "woven",
+    "weight": "heavy",
+    "stretch": false,
+    "needs_relaxation": true,
+    "needs_fusing": true,
+    "cutting_methods": ["straight_knife", "band_knife", "cnc"],
+    "sewing_methods": ["lockstitch", "overlock", "blind_stitch", "button_hole", "button_stitch"],
+    "special_processes": []
+  },
+  "linen": {
+    "name": "Linen",
+    "fabric_structure": "woven",
+    "weight": "medium",
+    "stretch": false,
+    "needs_relaxation": false,
+    "needs_fusing": true,
+    "cutting_methods": ["straight_knife", "cnc"],
+    "sewing_methods": ["lockstitch", "overlock", "button_hole", "button_stitch"],
+    "special_processes": []
+  },
+  "nylon": {
+    "name": "Nylon",
+    "fabric_structure": "woven",
+    "weight": "light",
+    "stretch": false,
+    "needs_relaxation": false,
+    "needs_fusing": false,
+    "cutting_methods": ["straight_knife", "laser", "cnc"],
+    "sewing_methods": ["lockstitch", "overlock"],
+    "special_processes": []
+  },
+  "fleece": {
+    "name": "Fleece",
+    "fabric_structure": "knitted",
+    "weight": "medium",
+    "stretch": true,
+    "needs_relaxation": true,
+    "needs_fusing": false,
+    "cutting_methods": ["straight_knife", "band_knife", "cnc"],
+    "sewing_methods": ["overlock", "flatlock", "interlock", "lockstitch", "coverstitch"],
+    "special_processes": []
+  },
+  "leather": {
+    "name": "Leather",
+    "fabric_structure": "leather",
+    "weight": "medium",
+    "stretch": false,
+    "needs_relaxation": false,
+    "needs_fusing": false,
+    "cutting_methods": ["die_cutting", "band_knife", "clicker_press"],
+    "sewing_methods": ["lockstitch", "blind_stitch"],
+    "special_processes": ["skiving", "edge_painting"]
+  },
+  "rayon": {
+    "name": "Rayon",
+    "fabric_structure": "woven",
+    "weight": "light",
+    "stretch": false,
+    "needs_relaxation": false,
+    "needs_fusing": true,
+    "cutting_methods": ["straight_knife", "band_knife", "cnc"],
+    "sewing_methods": ["lockstitch", "overlock", "blind_stitch"],
+    "special_processes": []
+  },
+  "spandex": {
+    "name": "Spandex",
+    "fabric_structure": "knitted",
+    "weight": "light",
+    "stretch": true,
+    "needs_relaxation": true,
+    "needs_fusing": false,
+    "cutting_methods": ["straight_knife", "band_knife", "cnc"],
+    "sewing_methods": ["overlock", "flatlock", "interlock", "coverstitch"],
+    "special_processes": []
+  },
+  "jersey": {
+    "name": "Jersey",
+    "fabric_structure": "knitted",
+    "weight": "light",
+    "stretch": true,
+    "needs_relaxation": true,
+    "needs_fusing": false,
+    "cutting_methods": ["straight_knife", "band_knife", "cnc"],
+    "sewing_methods": ["overlock", "flatlock", "interlock", "coverstitch"],
+    "special_processes": []
+  }
+}

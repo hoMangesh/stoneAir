@@ -1,0 +1,8 @@
+{
+  "clothing": {
+    "name": "Clothing & Apparel",
+    "description": "Manufacturing of garments, apparel, and fashion accessories",
+    "directory": "clothing",
+    "aliases": ["apparel", "garment", "fashion", "textile"]
+  }
+}
