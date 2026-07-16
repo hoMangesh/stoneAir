@@ -1,0 +1,10 @@
+step_id,process_id,step_name,sequence,description,version,effective_date,expiry_date,source,approval_status,confidence
+PSTEP-RD-001,PROC006,Load Fabric,1,Load prepared fabric into dyeing machine,1.0,2026-06-12,,Architecture_V2_process_step_seed,Approved,0.8
+PSTEP-RD-002,PROC006,Heat Bath,2,Heat dye bath to target dyeing temperature,1.0,2026-06-12,,Architecture_V2_process_step_seed,Approved,0.78
+PSTEP-RD-003,PROC006,Add Dye,3,Add reactive dye and auxiliaries according to recipe,1.0,2026-06-12,,Architecture_V2_process_step_seed,Approved,0.78
+PSTEP-RD-004,PROC006,Fixation,4,Add alkali and hold for dye fixation,1.0,2026-06-12,,Architecture_V2_process_step_seed,Approved,0.76
+PSTEP-RD-005,PROC006,Wash,5,Wash fabric to remove unfixed dye and salts,1.0,2026-06-12,,Architecture_V2_process_step_seed,Approved,0.76
+PSTEP-RD-006,PROC006,Dry,6,Dry dyed fabric before finishing,1.0,2026-06-12,,Architecture_V2_process_step_seed,Approved,0.76
+PSTEP-SEW-001,PROC009,Panel Assembly,1,Join primary garment panels,0.1,2026-06-12,,Architecture_V2_process_step_seed,Pending Validation,0.65
+PSTEP-SEW-002,PROC009,Trim Attachment,2,"Attach ribs, labels, buttons, zippers, or elastics",0.1,2026-06-12,,Architecture_V2_process_step_seed,Pending Validation,0.62
+PSTEP-SEW-003,PROC009,Final Stitch Inspection,3,Inspect seams and repair defects,0.1,2026-06-12,,Architecture_V2_process_step_seed,Pending Validation,0.6

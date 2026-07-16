@@ -1,0 +1,13 @@
+process_id,process_name,industry,input_material,output_material,energy_intensive,water_intensive,chemical_intensive,version,effective_date,expiry_date,source,approval_status,confidence
+PROC001,Cotton Farming,Apparel,Cotton Seed,Seed Cotton,Yes,Yes,Yes,1.0,2026-06-12,,Manufacturing_Knowledge_Graph_V1,Approved,0.85
+PROC002,Ginning,Apparel,Seed Cotton,Cotton Fiber,Yes,No,No,1.0,2026-06-12,,Manufacturing_Knowledge_Graph_V1,Approved,0.85
+PROC003,Ring Spinning,Apparel,Cotton Fiber,Cotton Yarn,Yes,No,No,1.0,2026-06-12,,Manufacturing_Knowledge_Graph_V1,Approved,0.86
+PROC004,Knitting,Apparel,Yarn,Fabric,Yes,No,No,1.0,2026-06-12,,Manufacturing_Knowledge_Graph_V1,Approved,0.86
+PROC005,Pretreatment,Apparel,Fabric,Prepared Fabric,Yes,Yes,Yes,1.0,2026-06-12,,Manufacturing_Knowledge_Graph_V1,Approved,0.82
+PROC006,Reactive Dyeing,Apparel,Prepared Fabric,Dyed Fabric,Yes,Yes,Yes,1.0,2026-06-12,,Manufacturing_Knowledge_Graph_V1,Approved,0.82
+PROC007,Finishing,Apparel,Dyed Fabric,Finished Fabric,Yes,Yes,Yes,1.0,2026-06-12,,Manufacturing_Knowledge_Graph_V1,Approved,0.8
+PROC008,Cutting,Apparel,Finished Fabric,Cut Panels,Yes,No,No,1.0,2026-06-12,,Manufacturing_Knowledge_Graph_V1,Approved,0.85
+PROC009,Sewing,Apparel,Cut Panels,Garment,Yes,No,No,1.0,2026-06-12,,Manufacturing_Knowledge_Graph_V1,Approved,0.85
+PROC010,Packaging,Apparel,Garment,Packed Garment,No,No,No,1.0,2026-06-12,,Manufacturing_Knowledge_Graph_V1,Approved,0.8
+PROC-EXT-604,Sole Molding,Footwear,EVA/rubber compounds,Molded sole,Yes,No,Yes,0.1,2026-06-12,,Architecture_V2_seed,Pending Validation,0.34
+PROC-EXT-606,Cementing and Sole Attachment,Footwear,Lasted upper and sole,Assembled shoe,Yes,No,Yes,0.1,2026-06-12,,Architecture_V2_seed,Pending Validation,0.34

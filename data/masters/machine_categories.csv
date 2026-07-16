@@ -1,0 +1,12 @@
+machine_category_id,machine_name,process_id,version,effective_date,expiry_date,source,approval_status,confidence
+MCAT001,Tractor,PROC001,1.0,2026-06-12,,Manufacturing_Knowledge_Graph_V1,Approved,0.8
+MCAT002,Irrigation Pump,PROC001,1.0,2026-06-12,,Manufacturing_Knowledge_Graph_V1,Approved,0.8
+MCAT003,Cotton Gin,PROC002,1.0,2026-06-12,,Manufacturing_Knowledge_Graph_V1,Approved,0.82
+MCAT004,Ring Frame,PROC003,1.0,2026-06-12,,Manufacturing_Knowledge_Graph_V1,Approved,0.86
+MCAT005,Circular Knitting Machine,PROC004,1.0,2026-06-12,,Manufacturing_Knowledge_Graph_V1,Approved,0.86
+MCAT006,Jet Dyeing Machine,PROC006,1.0,2026-06-12,,Manufacturing_Knowledge_Graph_V1,Approved,0.82
+MCAT007,Stenter Machine,PROC007,1.0,2026-06-12,,Manufacturing_Knowledge_Graph_V1,Approved,0.82
+MCAT008,CNC Fabric Cutter,PROC008,1.0,2026-06-12,,Manufacturing_Knowledge_Graph_V1,Approved,0.84
+MCAT009,Lockstitch Machine,PROC009,1.0,2026-06-12,,Manufacturing_Knowledge_Graph_V1,Approved,0.84
+MCAT010,Sole Molding Press,PROC-EXT-604,0.1,2026-06-12,,Architecture_V2_seed,Pending Validation,0.35
+MCAT011,Cementing Line,PROC-EXT-606,0.1,2026-06-12,,Architecture_V2_seed,Pending Validation,0.35

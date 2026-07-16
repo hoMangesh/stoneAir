@@ -1,0 +1,8 @@
+chemical_id,chemical_name,category,unit,cas_number,hazard_level,version,effective_date,expiry_date,source,approval_status,confidence
+CHEM001,Reactive Dye,Dye,g/kg,,Medium,1.0,2026-06-12,,Manufacturing_Knowledge_Graph_V2,Approved,0.75
+CHEM002,Salt,Auxiliary,g/kg,7647-14-5,Low,1.0,2026-06-12,,Manufacturing_Knowledge_Graph_V2,Approved,0.75
+CHEM003,Caustic Soda,Alkali,g/kg,1310-73-2,High,1.0,2026-06-12,,Manufacturing_Knowledge_Graph_V2,Approved,0.75
+CHEM004,Soda Ash,Alkali,g/kg,497-19-8,Medium,1.0,2026-06-12,,Manufacturing_Knowledge_Graph_V2,Approved,0.75
+CHEM005,Softener,Finishing Agent,g/kg,,Low,1.0,2026-06-12,,Manufacturing_Knowledge_Graph_V2,Approved,0.7
+CHEM006,Wetting Agent,Auxiliary,g/kg,,Medium,1.0,2026-06-12,,Manufacturing_Knowledge_Graph_V2,Approved,0.7
+CHEM007,Adhesive,Footwear Chemical,g/pair,,Medium,0.1,2026-06-12,,Architecture_V2_seed,Pending Validation,0.35

@@ -1,0 +1,5 @@
+transport_id,mode,unit,factor,version,effective_date,expiry_date,source,approval_status,confidence
+TRN001,Truck,kgCO2e/ton-km,0.00011,0.1,2026-06-12,,GLEC_Freight_Framework_v3_default,Pending Validation,0.4
+TRN002,Rail,kgCO2e/ton-km,0.00003,0.1,2026-06-12,,GLEC_Freight_Framework_v3_default,Pending Validation,0.4
+TRN003,Ocean Freight,kgCO2e/ton-km,0.000016,0.1,2026-06-12,,GLEC_Freight_Framework_v3_default,Pending Validation,0.4
+TRN004,Air Freight,kgCO2e/ton-km,0.0006,0.1,2026-06-12,,GLEC_Freight_Framework_v3_default,Pending Validation,0.4

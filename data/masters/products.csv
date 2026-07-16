@@ -1,0 +1,6 @@
+product_id,product_name,industry,category,subcategory,product_family,product_type,template_id,status,version,effective_date,expiry_date,source,approval_status,confidence
+PROD001,Basic Cotton T-Shirt,Apparel,Knit Tops,T-Shirt,Tops,T-Shirt,TPL-APP-KNT-TSH-001,Active,1.0,2026-06-12,,Product_Template_Library_V1,Approved,0.92
+PROD002,Polyester Performance T-Shirt,Apparel,Knit Tops,T-Shirt,Tops,T-Shirt,TPL-APP-KNT-TSH-002,Active,1.0,2026-06-12,,Product_Template_Library_V1,Approved,0.78
+PROD003,Cotton Pique Polo Shirt,Apparel,Knit Tops,Polo Shirt,Tops,Polo Shirt,TPL-APP-KNT-POL-001,Active,1.0,2026-06-12,,Product_Template_Library_V1,Approved,0.86
+PROD004,Pullover Hoodie,Apparel,Knit Fleece,Hoodie,Tops,Hoodie,TPL-APP-KNT-HOD-001,Active,1.0,2026-06-12,,Product_Template_Library_V1,Approved,0.8
+PROD005,Performance Running Shoe,Footwear,Athletic Footwear,Running Shoes,Athletic Footwear,Running Shoe,TPL-FW-SNK-RUN-001,Active,0.1,2026-06-12,,Product_Template_Library_V1,Pending Validation,0.52

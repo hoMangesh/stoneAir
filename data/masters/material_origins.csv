@@ -1,0 +1,8 @@
+origin_id,material_id,country,region,supplier,confidence,source,version,effective_date,expiry_date,approval_status
+ORG001,MAT001,India,Gujarat,Unknown,0.6,Industry default from KG typical origin,1.0,2026-06-12,,Pending Validation
+ORG002,MAT001,India,Maharashtra,Unknown,0.6,Industry default from KG typical origin,1.0,2026-06-12,,Pending Validation
+ORG003,MAT001,Brazil,Mato Grosso,Unknown,0.45,Architecture_V2 example seed,0.1,2026-06-12,,Pending Validation
+ORG004,MAT004,China,Zhejiang,Unknown,0.65,Industry default from KG typical origin,1.0,2026-06-12,,Pending Validation
+ORG005,MAT005,Global,Multiple,Unknown,0.55,Recycled polyester default origin,0.1,2026-06-12,,Pending Validation
+ORG006,MAT012,China,Guangdong,Unknown,0.35,Footwear material placeholder,0.1,2026-06-12,,Pending Validation
+ORG007,MAT013,Vietnam,Binh Duong,Unknown,0.35,Footwear material placeholder,0.1,2026-06-12,,Pending Validation
