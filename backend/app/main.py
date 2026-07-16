@@ -1,0 +1,431 @@
+from __future__ import annotations
+
+import json
+
+from fastapi import FastAPI, File, Form, UploadFile
+from fastapi.middleware.cors import CORSMiddleware
+
+from app.services.document_intelligence import (
+    extract_document_signals,
+    extract_text_from_uploads,
+    _extract_text_from_bytes,
+)
+from app.services.brochure_pipeline import (
+    brochure_review_summary,
+    extract_brochure,
+    fetch_brochure_text,
+    promote_energy_profile,
+)
+from app.services.brochure_discovery import discover_energy
+from app.services.inference_engine import build_inference_trace, inference_seed_records
+from app.services.knowledge_loader import load_knowledge_graph, load_master_data
+from app.services.machine_intelligence import extract_machine_specs, machine_intelligence_summary
+from app.services.machine_workflow import infer_workflow_record, recommend_workflow
+from app.services.manufacturing_reconstruction import reconstruct_route
+from app.services.persistence import persistence
+from app.services.product_intelligence import classify_product, match_template
+from app.services.reporting import build_report
+from app.services.resource_models import estimate_resources
+
+app = FastAPI(
+    title="Sustainable Fashion Carbon Intelligence API",
+    version="0.1.0",
+    description="KG-backed product, route, machine, resource, emission, and reporting intelligence for apparel and footwear LCA.",
+)
+
+app.add_middleware(
+    CORSMiddleware,
+    allow_origins=[
+        "http://localhost:5173",
+        "http://127.0.0.1:5173",
+        "http://localhost:5174",
+        "http://127.0.0.1:5174",
+        "http://localhost:5175",
+        "http://127.0.0.1:5175",
+    ],
+    allow_origin_regex=r"http://(localhost|127\.0\.0\.1):517\d",
+    allow_credentials=True,
+    allow_methods=["*"],
+    allow_headers=["*"],
+)
+
+
+@app.get("/api/health")
+def health() -> dict[str, str]:
+    return {"status": "ok"}
+
+
+@app.get("/api/catalog")
+def catalog() -> dict[str, object]:
+    kg = load_knowledge_graph()
+    return {
+        "taxonomy_count": len(kg["taxonomy"]),
+        "template_count": len(kg["templates"]),
+        "route_count": len(kg["routes_by_id"]),
+        "taxonomy": kg["taxonomy"],
+        "templates": kg["templates"],
+        "routes": [
+            {
+                "route_id": route_id,
+                "route_name": steps[0]["route_name"],
+                "steps": len(steps),
+                "confidence": round(sum(float(step["confidence_prior"]) for step in steps) / len(steps), 2),
+            }
+            for route_id, steps in kg["routes_by_id"].items()
+        ],
+    }
+
+
+@app.get("/api/master-domains")
+def master_domains() -> dict[str, object]:
+    master = load_master_data()
+    datasets = master["datasets"]
+    return {
+        "principles": [
+            "Everything is traceable.",
+            "All emissions originate from activity data.",
+            "Inference results are stored separately from source data.",
+            "Confidence is a first-class attribute.",
+            "Knowledge Graph drives inference.",
+        ],
+        "domains": [
+            {"domain": "Product Master", "entity_count": len(datasets["products"])},
+            {"domain": "Material Master", "entity_count": len(datasets["materials"])},
+            {"domain": "Process Master", "entity_count": len(datasets["processes"])},
+            {"domain": "Machine Master", "entity_count": len(datasets["machine_categories"])},
+            {"domain": "Machine Model Master", "entity_count": len(datasets["machine_models"])},
+            {"domain": "Consumable Master", "entity_count": len(datasets["consumables"])},
+            {"domain": "Chemical Master", "entity_count": len(datasets["chemicals"])},
+            {"domain": "Country Master", "entity_count": len(datasets["countries"])},
+            {"domain": "Supplier Master", "entity_count": len(datasets["suppliers"])},
+            {"domain": "Factory Master", "entity_count": len(datasets["factories"])},
+            {"domain": "Transport Master", "entity_count": len(datasets["transport_modes"])},
+            {"domain": "Emission Factor Master", "entity_count": len(datasets["emission_factors"])},
+        ],
+        "operational_domains": [
+            {"domain": "Yield Model", "entity_count": len(datasets["yield_models"])},
+            {"domain": "Material Provenance", "entity_count": len(datasets["material_origins"])},
+            {"domain": "Process Step", "entity_count": len(datasets["process_steps"])},
+            {"domain": "Factory Machine Map", "entity_count": len(datasets["factory_machine_map"])},
+            {"domain": "Machine Brochure Repository", "entity_count": len(datasets["machine_brochures"])},
+            {"domain": "Machine Spec Extraction", "entity_count": len(datasets["machine_spec_extractions"])},
+        ],
+        "sample_records": {
+            "machine_models": datasets["machine_models"][:4],
+            "machine_brochures": datasets["machine_brochures"][:4],
+            "machine_energy_profiles": datasets["machine_energy_profiles"][:4],
+            "emission_factors": datasets["emission_factors"][:6],
+        },
+    }
+
+
+@app.get("/api/knowledge-graph/schema")
+def knowledge_graph_schema() -> dict[str, object]:
+    return {
+        "nodes": [
+            "Product",
+            "Material",
+            "Route",
+            "Process",
+            "ProcessStep",
+            "MachineCategory",
+            "MachineModel",
+            "Consumable",
+            "Chemical",
+            "Supplier",
+            "Factory",
+            "Country",
+            "Transport",
+            "EmissionFactor",
+        ],
+        "relationships": [
+            {"from": "Product", "relationship": "CONTAINS", "to": "Material"},
+            {"from": "Material", "relationship": "FOLLOWS", "to": "Route"},
+            {"from": "Route", "relationship": "HAS_PROCESS", "to": "Process"},
+            {"from": "Process", "relationship": "HAS_STEP", "to": "ProcessStep"},
+            {"from": "Process", "relationship": "USES", "to": "MachineCategory"},
+            {"from": "MachineCategory", "relationship": "HAS_MODEL", "to": "MachineModel"},
+            {"from": "MachineModel", "relationship": "CONSUMES", "to": "Consumable"},
+            {"from": "Factory", "relationship": "OWNS", "to": "MachineModel"},
+            {"from": "Country", "relationship": "HAS", "to": "EmissionFactor"},
+            {"from": "Transport", "relationship": "USES", "to": "EmissionFactor"},
+        ],
+        "confidence_framework": [
+            {"level": 1, "label": "Primary Data", "range": "95-99%"},
+            {"level": 2, "label": "Supplier Data", "range": "80-95%"},
+            {"level": 3, "label": "Trade Data", "range": "70-85%"},
+            {"level": 4, "label": "Industry Average", "range": "50-75%"},
+            {"level": 5, "label": "Fallback Logic", "range": "25-50%"},
+        ],
+        "versioning_fields": ["version", "effective_date", "expiry_date", "source", "approval_status"],
+    }
+
+
+@app.get("/api/inference-records")
+def inference_records(limit: int = 50) -> dict[str, object]:
+    """Return recently persisted reconstruction runs (DB with CSV fallback)."""
+    runs = persistence.list_recent_runs(limit=min(limit, 200))
+    return {
+        "record_count": len(runs),
+        "runs": runs,
+        "storage_policy": "Runtime reconstruction runs are persisted to the database (or CSV fallback); masters remain the single source of truth.",
+    }
+
+
+@app.get("/api/machine-intelligence")
+def machine_intelligence() -> dict[str, object]:
+    return machine_intelligence_summary()
+
+
+@app.get("/api/workflow")
+def workflow(product_name: str) -> dict[str, object]:
+    """Dynamic per-product machine workflow from the recommender — works for any name."""
+    result = recommend_workflow(product_name)
+    if result is None:
+        return {"resolved": None, "workflow": [], "confidence": {"label": "Level 5 - Fallback Logic", "score": 0.0, "percent": 0.0}}
+    return result
+
+
+@app.post("/api/machine-spec-extract")
+async def machine_spec_extract(
+    machine_model_id: str = Form(default=""),
+    brochure_text: str = Form(default=""),
+    file: UploadFile | None = File(default=None),
+) -> dict[str, object]:
+    text_parts = [brochure_text]
+    source = "pasted_text"
+    if file is not None:
+        raw = await file.read()
+        source = file.filename or "uploaded_file"
+        try:
+            text_parts.append(raw.decode("utf-8"))
+        except UnicodeDecodeError:
+            text_parts.append(source)
+
+    return extract_machine_specs(
+        text="\n".join(part for part in text_parts if part),
+        machine_model_id=machine_model_id,
+        source=source,
+    )
+
+
+@app.get("/api/brochure-review")
+def brochure_review() -> list[dict]:
+    """List each machine model's current (proxy) energy profile awaiting a brochure derivation."""
+    return brochure_review_summary()
+
+
+@app.post("/api/brochure-review")
+async def brochure_review_extract(
+    machine_model_id: str = Form(default=""),
+    brochure_text: str = Form(default=""),
+    file: UploadFile | None = File(default=None),
+) -> dict[str, object]:
+    """Extract specs + DERIVE a kWh-per-unit energy profile from brochure text.
+
+    Returns a review candidate only — does NOT write to masters (governance:
+    extraction is source evidence). Call /api/brochure-promote to stamp an
+    approved derivation into machine_energy_profiles.csv.
+    """
+    source = "pasted_text"
+    pieces: list[str] = [brochure_text]
+    if file is not None:
+        source = file.filename or "uploaded_file"
+        pieces.append(_extract_text_from_bytes(file))
+    return extract_brochure(machine_model_id, "\n".join(p for p in pieces if p), source)
+
+
+@app.post("/api/brochure-promote")
+def brochure_promote(
+    machine_model_id: str = Form(...),
+    derived_kwh_per_unit: float = Form(...),
+    unit: str = Form(default="kWh/kg"),
+    source: str = Form(default="manual_review"),
+) -> dict[str, object]:
+    """Promote an approved brochure-derived kWh-per-unit into the energy profiles master."""
+    return promote_energy_profile(machine_model_id, derived_kwh_per_unit, unit=unit, source=source)
+
+
+@app.post("/api/brochure-fetch")
+def brochure_fetch(
+    machine_model_id: str = Form(...),
+    url: str = Form(...),
+) -> dict[str, object]:
+    """Fetch a real brochure/datasheet URL, extract text, and derive a candidate energy profile.
+
+    Review-only: returns the candidate derivation; does NOT write to masters.
+    Call /api/brochure-promote with the derived value to stamp it into the energy profiles.
+    """
+    fetched = fetch_brochure_text(url)
+    if not fetched.get("text"):
+        return {"machine_model_id": machine_model_id, "url": url, "error": fetched.get("error", "no extractable text")}
+    return extract_brochure(machine_model_id, fetched["text"], source=url)
+
+
+def _enrich_route_machines(machine_breakdown: list[dict], *, enrich: bool) -> dict[str, object]:
+    """Resolve near-exact brochure-derived energy for each machine used on the route.
+
+    When `enrich` is False (default) this returns the energy-profile approval
+    status for each model used, so the UI can flag which machines still run on a
+    KG-proxy vs. a brochure-approved value — no network call, instant.
+    When `enrich` is True, for every machine whose profile is not yet
+    brochure-approved we run live web discovery (brochure -> tech docs -> gov ->
+    open LCA) and attach the derivation as an approximate candidate. Any failure
+    keeps the existing proxy; this never breaks analyze.
+    """
+    seen: dict[str, dict] = {}
+    for row in machine_breakdown:
+        model_id = row.get("machine_model_id")
+        if model_id and model_id not in seen:
+            seen[model_id] = {
+                "machine_model_id": model_id,
+                "machine_model": row.get("machine_model", ""),
+                "process_name": row.get("process_name", ""),
+                "current_kwh": row.get("electricity_rate"),
+                "current_unit": row.get("unit", ""),
+                "source_status": "KG proxy",
+            }
+
+    if not enrich:
+        return {"enabled": False, "machines": list(seen.values())}
+
+    # Cap live discovery per request: each uncovered machine can cost up to
+    # ~_TOTAL_TIMEOUT of web time, so bound the worst-case analyze latency.
+    # The costliest drivers (dyeing, knitting) come first because they dominate
+    # carbon; the rest keep showing as KG-proxy candidates for later enrichment.
+    _MAX_LIVE_PER_REQUEST = 3
+    enriched: list[dict] = []
+    live_count = 0
+    for model_id, info in seen.items():
+        # Cache hits are free; only brand-new web discovery is capped.
+        if live_count >= _MAX_LIVE_PER_REQUEST:
+            info["source_status"] = "Discovery deferred (per-request cap); KG proxy retained"
+            info["derivation_basis"] = "Skipped to keep analyze quick; run /api/brochure-fetch for this model."
+            enriched.append(info)
+            continue
+        result = discover_energy(model_id)
+        if not result.cache_hit:
+            live_count += 1
+        info["cache_hit"] = result.cache_hit
+        if result.derived_kwh_per_unit is not None:
+            info["source_status"] = "DB-approved" if result.cache_hit else "Brochure-derived (approximate)"
+            info["derived_kwh_per_unit"] = result.derived_kwh_per_unit
+            info["unit"] = result.unit
+            info["installed_power_kw"] = result.installed_power_kw
+            info["throughput_kg_per_h"] = result.throughput_kg_per_h
+            info["derivation_basis"] = result.basis
+        else:
+            info["source_status"] = "No derivation found; KG proxy retained"
+            info["derivation_basis"] = result.basis
+        info["attempts"] = [
+            {
+                "strategy": a.strategy,
+                "url": a.url,
+                "outcome": a.outcome,
+                "basis": a.basis,
+            }
+            for a in result.attempts
+        ]
+        enriched.append(info)
+    return {"enabled": True, "machines": enriched}
+
+
+@app.post("/api/analyze")
+async def analyze_product(
+    product_description: str = Form(default=""),
+    bom: str = Form(default=""),
+    origin: str = Form(default=""),
+    enrich_machines: bool = Form(default=False),
+    files: list[UploadFile] = File(default=[]),
+) -> dict[str, object]:
+    # Structured BOM (materials + weight + origin) is the primary accurate path.
+    # It is supplied as a JSON string so multipart forms stay simple. Missing or
+    # malformed BOM degrades gracefully to the free-text description fallback.
+    bom_components: list[dict] = []
+    if bom.strip():
+        try:
+            parsed_bom = json.loads(bom)
+            bom_components = parsed_bom.get("components", parsed_bom) if isinstance(parsed_bom, dict) else parsed_bom
+            if not isinstance(bom_components, list):
+                bom_components = []
+        except json.JSONDecodeError:
+            bom_components = []
+
+    # Parse uploaded tech packs (PDF/Excel/CSV) into text rather than just
+    # decoding bytes — extracts real BOM signals where the format supports it.
+    uploaded_texts = extract_text_from_uploads(files)
+
+    signals = extract_document_signals(
+        product_description,
+        uploaded_texts,
+        bom_components=bom_components,
+        declared_origin=origin or None,
+    )
+    classification = classify_product(signals)
+    taxonomy = classification["taxonomy"]
+    template_match = match_template(str(taxonomy["taxonomy_id"]), signals)
+    template = template_match["template"]
+    route = reconstruct_route(str(template["default_route_id"]))
+    resources = estimate_resources(route["steps"], int(template_match["resolved_weight_g"]))
+    report = build_report(classification, template_match, route, resources)
+
+    # Step 4b: live machine-energy discovery. Off by default so the fast path
+    # stays fast and never hits the network; opt in with enrich_machines=true.
+    # For each machine model used on this route whose energy profile is still a
+    # KG-proxy (not yet brochure-promoted), resolve a near-exact kWh-per-unit
+    # from authentic web sources (brochure -> tech docs -> gov DBs -> open LCA).
+    # Falls back to the existing proxy on any failure so analyze never breaks.
+    brochure_enrichment = _enrich_route_machines(resources["machine_breakdown"], enrich=enrich_machines)
+
+    # Dynamic per-name machine workflow from the recommender — enrichment that
+    # resolves machines for products the static route library only covers generically.
+    workflow_name = signals.product_hint or product_description.strip() or ""
+    dynamic_workflow = recommend_workflow(workflow_name) if workflow_name else None
+    workflow_record = infer_workflow_record(workflow_name) if workflow_name else None
+
+    inference_trace = build_inference_trace(
+        signals=signals,
+        classification=classification,
+        template_match=template_match,
+        route=route,
+        resources=resources,
+    )
+    if workflow_record:
+        inference_trace["records"].insert(len(inference_trace["records"]) - (1 if resources["activity_trace"] else 0), workflow_record)
+        inference_trace["summary"]["record_count"] = len(inference_trace["records"])
+
+    # Persist this reconstruction for future reference (DB with CSV fallback).
+    persisted = persistence.store_run(
+        product_name=report["product"]["template_name"],
+        template_id=report["product"]["template_id"],
+        route_id=report["route"]["route_id"],
+        totals=resources["totals"],
+        inference_records=inference_trace["records"],
+        activity_trace=resources["activity_trace"],
+    )
+
+    return {
+        "signals": {
+            "product_hint": signals.product_hint,
+            "keywords": signals.keywords,
+            "blend": signals.blend,
+            "gsm": signals.gsm,
+            "weight_g": signals.weight_g,
+            "bom_components": [
+                {
+                    "material": component.material,
+                    "percent": component.percent,
+                    "weight_g": component.weight_g,
+                    "origin": component.origin,
+                }
+                for component in signals.bom_components
+            ],
+            "declared_origin": signals.declared_origin,
+            "provenance": signals.provenance,
+        },
+        "inference_trace": inference_trace,
+        "dynamic_workflow": dynamic_workflow,
+        "brochure_enrichment": brochure_enrichment,
+        "persisted": persisted,
+        **report,
+    }

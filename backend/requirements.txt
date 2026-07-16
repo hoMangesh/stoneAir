@@ -1,0 +1,16 @@
+fastapi==0.115.6
+uvicorn[standard]==0.34.0
+python-multipart==0.0.20
+pydantic==2.10.4
+# Document intelligence: BOM / tech-pack parsing. pdfplumber pulls in pdfminer;
+# openpyxl reads .xlsx tech packs. Both degrade gracefully if absent.
+pdfplumber==0.11.10
+openpyxl==3.1.5
+# Persistence layer for inference + emission records (see docs/Inference_Engine.md).
+# SQLite in local dev; the same engine/dialect string targets PostgreSQL in prod
+# via the DATABASE_URL env var (e.g. postgresql+psycopg://user:pw@host/db).
+SQLAlchemy==2.0.36
+psycopg[binary]==3.2.3
+# Dev/test only — the offline brochure-discovery suite (tests/). Not required
+# to run the app.
+pytest==8.3.4
