@@ -31,6 +31,7 @@ from app.config import MASTER_DATA_ROOT
 from app.services import machine_intelligence as mi
 
 _ENERGY_PROFILES_CSV = MASTER_DATA_ROOT / "machine_energy_profiles.csv"
+_MACHINE_BROCHURES_CSV = MASTER_DATA_ROOT / "machine_brochures.csv"
 
 # Target unit per machine category. The energy profile table is keyed per
 # machine model, but the *physical* unit is determined by the category
@@ -200,6 +201,77 @@ def promote_energy_profile(machine_model_id: str, derived_kwh_per_unit: float, *
         "approval_status": "Brochure Approved",
         "confidence": 0.8,
         "written_to": str(_ENERGY_PROFILES_CSV),
+    }
+
+
+def persist_brochure_observations(
+    machine_model_id: str,
+    *,
+    brochure_id: str | None,
+    url: str,
+    installed_power_kw: float,
+    throughput_kg_per_h: float,
+) -> dict[str, object]:
+    """Stamp a live-derived power/throughput back into machine_brochures.csv.
+
+    Unlike ``promote_energy_profile`` (reviewer-only, writes the energy master),
+    this records the *raw brochure observation* the live discovery just made, so
+    the next run benefits from the now-known brochure URL (Tier 0.5 reads it back
+    without re-fetching) and a reviewer sees the derivation basis.
+
+    Governance: writes ONLY when a real derivation succeeded (both figures
+    truthy). Never writes TBD/partial figures, never fabricates. ``observed_capacity``
+    stores an ``"N kg/h"`` string. Clears the ``load_master_data`` lru_cache so the
+    next read sees the update. Mirrors ``promote_energy_profile``'s read/mutate/
+    rewrite pattern.
+    """
+    if not installed_power_kw or not throughput_kg_per_h:
+        return {"machine_model_id": machine_model_id, "written": False,
+                "reason": "no complete derivation (power + throughput required)"}
+    if not (url or "").lower().startswith(("http://", "https://")):
+        return {"machine_model_id": machine_model_id, "written": False,
+                "reason": "no authentic source URL"}
+
+    rows: list[dict[str, str]] = []
+    fieldnames: list[str] = []
+    found = False
+    with _MACHINE_BROCHURES_CSV.open(newline="", encoding="utf-8") as handle:
+        reader = csv.DictReader(handle)
+        fieldnames = list(reader.fieldnames or [])
+        for row in reader:
+            row_id = row.get("brochure_id", "")
+            row_model = row.get("machine_model_id", "")
+            matches = (brochure_id and row_id == brochure_id) or (row_model == machine_model_id)
+            if matches and not found:
+                row["public_url"] = url
+                row["observed_power_kw"] = f"{installed_power_kw:g}"
+                row["observed_capacity"] = f"{throughput_kg_per_h:g} kg/h"
+                row["extraction_status"] = "Live-derived"
+                row["source"] = f"Brochure-derived live: {installed_power_kw:g} kW / {throughput_kg_per_h:g} kg/h"
+                row["approval_status"] = row.get("approval_status") or "Pending Brochure Review"
+                row["source_status"] = row.get("source_status") or "Public URL resolved"
+                found = True
+            rows.append(row)
+
+    if not found:
+        return {"machine_model_id": machine_model_id, "written": False,
+                "reason": "no machine_brochures.csv row for this model/brochure_id"}
+
+    with _MACHINE_BROCHURES_CSV.open("w", newline="", encoding="utf-8") as handle:
+        writer = csv.DictWriter(handle, fieldnames=fieldnames or list(rows[0].keys()))
+        writer.writeheader()
+        writer.writerows(rows)
+
+    load_master_data.cache_clear()
+
+    return {
+        "machine_model_id": machine_model_id,
+        "brochure_id": brochure_id,
+        "public_url": url,
+        "observed_power_kw": installed_power_kw,
+        "observed_capacity": f"{throughput_kg_per_h:g} kg/h",
+        "written": True,
+        "written_to": str(_MACHINE_BROCHURES_CSV),
     }
 
 

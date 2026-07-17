@@ -266,3 +266,184 @@ def test_discover_energy_never_raises_and_caps_time():
     assert outcomes & {"network_error", "skipped"}
     # Never hangs: bounded by the hard cap (+ small grace for the final sleep).
     assert elapsed <= bd._TOTAL_TIMEOUT + 2.0
+
+
+# ---------------------------------------------------------------------------
+# Tier 0.5 + second-host fallback tests (offline; all via urlopen patching).
+# ---------------------------------------------------------------------------
+def _fake_master_with_model(machine_model_id: str, manufacturer: str, model: str, category: str,
+                            brochures: list[dict] | None = None) -> dict:
+    """A minimal master with a model resolvable by discover_energy, no Tier-0 hit."""
+    return {
+        "machine_energy_by_model": {machine_model_id: {"approval_status": "Pending Validation", "electricity": ""}},
+        "machine_brochures_by_model": {machine_model_id: brochures or []},
+        "datasets": {
+            "machine_models": [
+                {"machine_model_id": machine_model_id, "manufacturer": manufacturer,
+                 "model": model, "machine_category": category}
+            ]
+        },
+    }
+
+
+def _patch_urlopen_seq(payloads: list[bytes]):
+    """Sequential urlopen responses (root -> page -> pdf ...). Repeats last on overflow."""
+    fakes = [_FakeResponse(p) for p in payloads]
+    return patch.object(bd.urllib.request, "urlopen", side_effect=fakes)
+
+
+def test_tier05_registered_brochure_url_derives():
+    # A brochure row with a real public_url -> Tier 0.5 fetches + derives, then
+    # persists the observation (persistence patched here to avoid writing CSVs).
+    brochure_text = b"Thies iMaster H2O\nInstalled power: 18.0 kW\nThroughput: 120 kg/h\n"
+    master = _fake_master_with_model(
+        "MMOD001", "Thies", "iMaster H2O", "Jet Dyeing Machine",
+        brochures=[{"brochure_id": "MBR001", "public_url": "https://thies-gmbh.com/imaster-h2o.pdf"}],
+    )
+    persisted = {}
+    with patch.object(bd, "load_master_data", return_value=master), \
+         _patch_urlopen_seq([brochure_text]), \
+         patch.object(bd, "persist_brochure_observations",
+                      side_effect=lambda mid, **kw: persisted.update(kw) or {}) as persist:
+        result = bd.discover_energy("MMOD001")
+    assert result.cache_hit is False
+    assert result.derived_kwh_per_unit == round(18.0 / 120.0, 4)  # 0.15
+    assert result.installed_power_kw == 18.0
+    assert result.throughput_kg_per_h == 120.0
+    # The live-derived observation was handed to the persistence writer.
+    assert persist.call_count == 1
+    assert persisted["installed_power_kw"] == 18.0
+    assert persisted["throughput_kg_per_h"] == 120.0
+    assert persisted["brochure_id"] == "MBR001"
+    # The attempt was an honest 'derived' against the official source.
+    assert any(a.outcome == "derived" and a.url.endswith(".pdf") for a in result.attempts)
+
+
+def test_tier05_official_crawl_one_hop_finds_pdf():
+    # No registered URL; brand in _OFFICIAL_DOMAINS. Root has no PDF but links a
+    # /products page; that page links the brochure PDF -> 1-hop crawl derives.
+    root_html = b'<a href="/products">Products</a><a href="/about">About</a>'
+    products_html = b'<a href="/products/systems/g38.pdf">G 38 brochure</a>'
+    pdf_text = b"Rieter G 38\nInstalled power: 45.0 kW\nThroughput: 300 kg/h\n"
+    master = _fake_master_with_model("MMOD003", "Rieter", "G 38", "Ring Frame", brochures=[])
+    with patch.object(bd, "load_master_data", return_value=master), \
+         patch.object(bd, "persist_brochure_observations") as persist, \
+         _patch_urlopen_seq([root_html, products_html, pdf_text]):
+        result = bd.discover_energy("MMOD003")
+    assert result.derived_kwh_per_unit == round(45.0 / 300.0, 4)
+    assert any(a.outcome == "derived" and a.strategy == "Official-site crawl" for a in result.attempts)
+    persist.assert_called_once()
+
+
+def test_tier05_unknown_brand_skips_crawl_and_falls_through():
+    # Brand NOT in _OFFICIAL_DOMAINS and no registered URL -> Tier 0.5 adds at
+    # most a 'fetched_no_specs'/'skipped' (no official fetch) and the ladder runs.
+    master = _fake_master_with_model("XX1", "Acme", "Z9", "Lockstitch Machine", brochures=[])
+    # Make the whole search ladder also fail fast so no real network is wanted:
+    with patch.object(bd, "load_master_data", return_value=master), \
+         patch.object(bd, "_ddg_candidates", return_value=([], "")), \
+         patch.object(bd, "_candidate_urls_from_bing", return_value=[]), \
+         patch.object(bd.urllib.request, "urlopen", side_effect=socket.timeout("boom")):
+        result = bd.discover_energy("XX1")
+    assert result.derived_kwh_per_unit is None  # degraded, never raised
+    assert isinstance(result, bd.DiscoveryResult)
+
+
+def test_second_host_fallback_when_ddg_captcha():
+    # DDG returns a captcha/anomaly HTML (no result__url, "anomaly") -> a
+    # 'search_host_blocked' attempt, then Bing returns a candidate PDF that derives.
+    ddg_captcha = b"<html>anomaly detection - unusual traffic from your network</html>"
+    bing_html = b'<html><a href="https://vendor.com/g38-spec.pdf">spec</a></html>'
+    pdf_text = b"Ring frame\nInstalled power: 45.0 kW\nThroughput: 300 kg/h\n"
+    master = _fake_master_with_model("MMOD003", "Rieter", "G 38", "Ring Frame", brochures=[])
+    # urlopen call sequence: DDG (captcha), Bing (html), fetch(candidate pdf)
+    with patch.object(bd, "load_master_data", return_value=master), \
+         patch.object(bd, "persist_brochure_observations"), \
+         _patch_urlopen_seq([ddg_captcha, bing_html, pdf_text]):
+        # Make Tier 0.5 a no-op so we exercise the search ladder + Bing fallback.
+        with patch.object(bd, "_try_official_source", return_value=None):
+            result = bd.discover_energy("MMOD003")
+    outcomes = {a.outcome for a in result.attempts}
+    assert "search_host_blocked" in outcomes
+    assert result.derived_kwh_per_unit == round(45.0 / 300.0, 4)
+
+
+def test_power_without_throughput_not_derived_or_persisted():
+    # A fetched source with power but no kg/h must NOT derive and NOT persist.
+    brochure_text = b"Machine\nInstalled power: 18.0 kW\n(no throughput anywhere)\n"
+    master = _fake_master_with_model(
+        "MMOD001", "Thies", "iMaster H2O", "Jet Dyeing Machine",
+        brochures=[{"brochure_id": "MBR001", "public_url": "https://thies-gmbh.com/x.pdf"}],
+    )
+    with patch.object(bd, "load_master_data", return_value=master), \
+         _patch_urlopen_seq([brochure_text]), \
+         patch.object(bd, "_official_site_candidates", return_value=[]), \
+         patch.object(bd, "_ddg_candidates", return_value=([], "")), \
+         patch.object(bd, "_candidate_urls_from_bing", return_value=[]), \
+         patch.object(bd, "persist_brochure_observations") as persist:
+        result = bd.discover_energy("MMOD001")
+    assert result.derived_kwh_per_unit is None
+    # No live derivation -> persistence writer must NOT be called.
+    assert persist.call_count == 0
+    # The registered-URL reach recorded an honest no-specs attempt; Bing may fire
+    # as the second-host fallback for the search ladder (that's correct and
+    # independent), but it yields nothing via the patched empty return.
+    assert any(a.outcome == "official_url_no_specs" for a in result.attempts)
+
+
+# ---------------------------------------------------------------------------
+# Persistence writer — writes observed_power_kw / observed_capacity / url only
+# on a complete derivation, and clears the master-data cache.
+# ---------------------------------------------------------------------------
+def test_persist_brochure_observations_writes_and_clears_cache(tmp_path, monkeypatch):
+    import csv as _csv
+    from app.services import brochure_pipeline as bp
+
+    # Minimal in-memory CSV mirror pointed at a tmp file we control.
+    brochures_csv = tmp_path / "machine_brochures.csv"
+    fieldnames = ["brochure_id", "machine_model_id", "manufacturer", "model",
+                  "document_type", "public_url", "source_status", "extraction_status",
+                  "observed_power_kw", "observed_capacity", "observed_water_or_liquor_ratio",
+                  "notes", "version", "effective_date", "expiry_date", "source",
+                  "approval_status", "confidence"]
+    with brochures_csv.open("w", newline="", encoding="utf-8") as h:
+        w = _csv.DictWriter(h, fieldnames=fieldnames)
+        w.writeheader()
+        w.writerow({"brochure_id": "MBR003", "machine_model_id": "MMOD003",
+                    "manufacturer": "Rieter", "model": "G 38", "document_type": "Brochure",
+                    "public_url": "TBD_PUBLIC_BROCHURE_REQUIRED", "source_status": "Pending Public URL",
+                    "extraction_status": "Not Extracted", "observed_power_kw": "",
+                    "observed_capacity": "", "observed_water_or_liquor_ratio": "", "notes": "",
+                    "version": "0.1", "effective_date": "2026-06-17", "expiry_date": "",
+                    "source": "seed", "approval_status": "Pending Brochure Review",
+                    "confidence": "0.25"})
+
+    monkeypatch.setattr(bp, "_MACHINE_BROCHURES_CSV", brochures_csv)
+    cleared = {"called": False}
+    def _fake_clear():
+        cleared["called"] = True
+    monkeypatch.setattr(bp.load_master_data, "cache_clear", _fake_clear)
+
+    out = bp.persist_brochure_observations(
+        "MMOD003", brochure_id="MBR003", url="https://rieter.com/g38.pdf",
+        installed_power_kw=45.0, throughput_kg_per_h=300.0,
+    )
+    assert out["written"] is True
+    assert out["observed_capacity"] == "300 kg/h"
+    assert cleared["called"] is True
+
+    # The row on disk now carries the live-derived figures + real URL.
+    with brochures_csv.open(newline="", encoding="utf-8") as h:
+        row = next(r for r in _csv.DictReader(h) if r["brochure_id"] == "MBR003")
+    assert row["observed_power_kw"] == "45"
+    assert row["observed_capacity"] == "300 kg/h"
+    assert row["public_url"] == "https://rieter.com/g38.pdf"
+    assert row["extraction_status"] == "Live-derived"
+
+    # No-complete-derivation guard: must refuse to write.
+    refused = bp.persist_brochure_observations(
+        "MMOD003", brochure_id="MBR003", url="https://rieter.com/g38.pdf",
+        installed_power_kw=45.0, throughput_kg_per_h=0.0,
+    )
+    assert refused["written"] is False
+
