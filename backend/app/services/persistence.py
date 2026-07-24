@@ -21,11 +21,13 @@ from app.config import CALCULATION_DATA_ROOT
 
 try:
     from sqlalchemy import Column, Float, String, Text, create_engine
+    from sqlalchemy.exc import IntegrityError
     from sqlalchemy.orm import DeclarativeBase, Session
 
     _SQLALCHEMY_AVAILABLE = True
 except ImportError:  # pragma: no cover - degrade gracefully
     _SQLALCHEMY_AVAILABLE = False
+    IntegrityError = Exception  # type: ignore[assignment,misc]
 
 
 def _database_url() -> str:
@@ -77,7 +79,14 @@ if _SQLALCHEMY_AVAILABLE:
 
 
 def _new_run_id() -> str:
-    return datetime.now(UTC).strftime("RUN-%Y%m%dT%H%M%S")
+    # Second-granular timestamps alone collide when two /api/analyze calls land
+    # in the same second (the run_id is the carbon_calculations primary key, so
+    # a collision raised IntegrityError and killed the second request). Append a
+    # short random hex suffix so same-second stays unique while keeping the id
+    # human-readable and time-ordered.
+    when = datetime.now(UTC).strftime("RUN-%Y%m%dT%H%M%S")
+    suffix = os.urandom(4).hex()
+    return f"{when}-{suffix}"
 
 
 class PersistenceLayer:
@@ -118,7 +127,18 @@ class PersistenceLayer:
     ) -> dict:
         run_id = _new_run_id()
         if self._ensure_ready():
-            self._store_sql(run_id, product_name, template_id, route_id, totals, inference_records, activity_trace)
+            # Retry on a vanishingly-rare run_id collision (primary-key
+            # IntegrityError) by regenerating the id, rather than surfacing the
+            # error as a 500 to the caller. Same-second uniqueness is already
+            # handled by the random suffix; this is the backstop.
+            for attempt in range(3):
+                try:
+                    self._store_sql(run_id, product_name, template_id, route_id, totals, inference_records, activity_trace)
+                    break
+                except IntegrityError:
+                    if attempt == 2:
+                        raise
+                    run_id = _new_run_id()
             storage = "database"
         else:
             self._store_csv(run_id, product_name, template_id, route_id, totals, inference_records, activity_trace)
