@@ -45,6 +45,7 @@ def build_inference_trace(
     template_match: dict[str, object],
     route: dict[str, object],
     resources: dict[str, object],
+    composite_route: dict[str, object] | None = None,
 ) -> dict[str, object]:
     taxonomy = classification["taxonomy"]
     template = template_match["template"]
@@ -102,6 +103,30 @@ def build_inference_trace(
                 f"inferred={source_mix['inferred']}",
             ],
         ),
+    ]
+
+    if composite_route:
+        sig = composite_route.get("signature") or []
+        level = str(composite_route.get("confidence_level") or "L4")
+        confidence = {"L3": 0.7, "L4": 0.5}.get(level, 0.5)
+        records.append(
+            _record(
+                inference_id="INF-RUN-COMPOSITE-ROUTE",
+                inference_type="Composite Route Resolution",
+                input_data=" | ".join(str(part) for part in sig) or str(template["default_route_id"]),
+                output_data=f"{composite_route.get('route_id')} ({level}, candidates={composite_route.get('candidates_seen')})",
+                agent="Route Resolution Agent",
+                confidence=confidence,
+                source="Route Library V2 inference_triggers + material_origins composite scoring",
+                evidence=[
+                    f"derivation={str(composite_route.get('derivation_basis'))[:140]}",
+                    f"fallback={composite_route.get('is_fallback')}",
+                    f"bom_origin={composite_route.get('bom_origin') or 'none'}",
+                ],
+            ),
+        )
+
+    records.append(
         _record(
             inference_id="INF-RUN-MACHINE-RESOURCE",
             inference_type="Machine And Resource Estimation",
@@ -116,7 +141,7 @@ def build_inference_trace(
                 f"carbon_kgco2e={resources['totals']['carbon_kgco2e']}",
             ],
         ),
-    ]
+    )
 
     if activity_trace:
         activity_confidence = sum(float(row["confidence"]["score"]) for row in activity_trace) / len(activity_trace)

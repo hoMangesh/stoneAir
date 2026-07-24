@@ -86,7 +86,58 @@ def _activity_quantity(unit: str, rate: float, weight_kg: float) -> float:
     return rate * weight_kg
 
 
-def _select_machine_records(step: dict[str, str], master_data: dict[str, object]) -> list[dict[str, str]]:
+# Process groups whose step country is origin-sensitive — the BOM's declared
+# origin (where the fiber/material is grown or recovered) overrides the route's
+# hardcoded default_country. Finishing steps happen where the garment is
+# assembled, so they keep the route default. Mirrors route_resolution's set.
+_ORIGIN_SENSITIVE_PROCESS_GROUPS = {"Fiber Production", "Fiber Preparation"}
+
+
+def _canonical_country(name: str, master_data: dict[str, object] | None) -> str:
+    """Normalize a country name to the masters' Title-Case key where possible.
+
+    BOM origins arrive from document_intelligence already lowercased ("india"),
+    but the masters index emission_factors / transport_routes / region_machine_rank
+    by Title-Case names ("India"). Lowercasing both sides of a comparison hides the
+    mismatch in route_resolution, but resource_models does direct ``.get(country)``
+    lookups — so a raw lowercase origin would miss and silently fall to Default.
+    Resolve through the case-insensitive country index instead. Anything not in the
+    master (a free-form origin, or "Default") is returned untouched so downstream's
+    own fallback handling still applies.
+    """
+    if not name or not master_data:
+        return name
+    ci = master_data.get("countries_by_name_ci") or {}
+    hit = ci.get(name.strip().lower())
+    return (hit.get("country_name") or name) if hit else name
+
+
+def _step_country(step: dict[str, str], origin_context: dict[str, object] | None,
+                  master_data: dict[str, object] | None = None) -> str:
+    """Resolve a step's country, injecting the BOM origin for origin-sensitive groups.
+
+    Without an origin_context (or for non-origin-sensitive steps) this returns the
+    route's reviewed ``default_country`` — unchanged behaviour, no regression.
+    With an origin_context for a farming/agro step, the BOM's origin wins so the
+    grid factor and transport legs follow the real material origin, not the
+    route's pre-filled default (the "origin is tentative" gap this closes). The
+    origin is canonicalized to the masters' Title-Case country key so downstream
+    ``.get(country)`` lookups (emission factors, transport legs, region machine
+    rank) actually hit instead of falling to Default on a casing mismatch.
+    """
+    route_default = step.get("default_country") or "Default"
+    if not origin_context:
+        return route_default
+    groups = origin_context.get("process_groups") or _ORIGIN_SENSITIVE_PROCESS_GROUPS
+    if (step.get("process_group") or "").strip() in groups:
+        origin = (origin_context.get("origin") or "").strip()
+        if origin:
+            return _canonical_country(origin, master_data)
+    return route_default
+
+
+def _select_machine_records(step: dict[str, str], master_data: dict[str, object],
+                             origin_context: dict[str, object] | None = None) -> list[dict[str, str]]:
     """Pick the machine model(s) for a step.
 
     Region-prioritized: among models in the parked machine category, prefer the
@@ -98,7 +149,7 @@ def _select_machine_records(step: dict[str, str], master_data: dict[str, object]
     machine_models_by_category = master_data["machine_models_by_category"]
     machine_energy_by_model = master_data["machine_energy_by_model"]
     region_machine_rank = master_data.get("region_machine_rank", {})
-    country = (step.get("default_country") or "Default")
+    country = _step_country(step, origin_context, master_data)
     selected: list[dict[str, str]] = []
 
     for machine_name in _split_pipe(step.get("default_machine_names")):
@@ -162,21 +213,24 @@ def _resolve_transport_leg(
     route_steps: list[dict[str, str]],
     index: int,
     master_data: dict[str, object],
+    origin_context: dict[str, object] | None = None,
 ) -> dict[str, object] | None:
     """Turn a route step's `transport_leg_after` prose into an emissions row.
 
-    Origin = this step's country. Destination = next step's country if available,
-    else a default export hub. Distance/mode come from transport_routes.csv when
-    the (origin, destination) leg is known, else the default export distance.
+    Origin = this step's country (origin-aware: a farming/agro step uses the
+    BOM's declared material origin, not the route's hardcoded default).
+    Destination = next step's country if available, else a default export hub.
+    Distance/mode come from transport_routes.csv when the (origin, destination)
+    leg is known, else the default export distance.
     """
     leg_phrase = (step.get("transport_leg_after") or "").strip().lower()
     if not leg_phrase or leg_phrase == "none":
         return None
 
     route_ids_by_leg = master_data.get("transport_routes_by_leg", {})
-    origin_country = (step.get("default_country") or "").strip()
+    origin_country = _step_country(step, origin_context, master_data).strip()
     next_step = route_steps[index + 1] if index + 1 < len(route_steps) else None
-    destination_country = (next_step.get("default_country") if next_step else "").strip() or "United States"
+    destination_country = (_step_country(next_step, origin_context, master_data) if next_step else "").strip() or "United States"
 
     chosen_mode = DEFAULT_EXPORT_MODE
     for needle, mode in _TRANSPORT_MODE_HINTS:
@@ -202,7 +256,8 @@ def _resolve_transport_leg(
     }
 
 
-def estimate_resources(route_steps: list[dict[str, str]], weight_g: int) -> dict[str, object]:
+def estimate_resources(route_steps: list[dict[str, str]], weight_g: int,
+                       origin_context: dict[str, object] | None = None) -> dict[str, object]:
     master_data = load_master_data()
     final_weight_kg = max(weight_g / 1000, 0.01)
     yield_by_process = master_data.get("yield_model_by_process", {})
@@ -241,12 +296,14 @@ def estimate_resources(route_steps: list[dict[str, str]], weight_g: int) -> dict
         step_water_l = 0.0
         step_carbon = 0.0
         step_mass = step_mass_kg[index]
-        country = step.get("default_country") or "Default"
+        # Origin-sensitive steps (farming/agro) use the BOM origin's grid; the
+        # rest keep the route default. Same helper the machine selection uses.
+        country = _step_country(step, origin_context, master_data)
         factor_record = _electricity_factor(country, master_data)
         factor = _as_float(factor_record.get("factor"), 0.55)
         factor_confidence = _as_float(factor_record.get("confidence"), 0.35)
         factor_id = factor_record.get("factor_id", "EF-ELEC-DEF-2026")
-        machine_records = _select_machine_records(step, master_data)
+        machine_records = _select_machine_records(step, master_data, origin_context)
 
         for machine in machine_records:
             electricity_rate = _as_float(machine.get("electricity"))
@@ -373,7 +430,7 @@ def estimate_resources(route_steps: list[dict[str, str]], weight_g: int) -> dict
         step_carbon += chemical_carbon_step
 
         # Transport leg after this step.
-        leg = _resolve_transport_leg(step, route_steps, index, master_data)
+        leg = _resolve_transport_leg(step, route_steps, index, master_data, origin_context)
         if leg:
             transport_factor, transport_factor_id, transport_confidence = _transport_factor(leg["mode"], master_data)
             # ton-km = product mass (tons) * distance. Use final garment mass for

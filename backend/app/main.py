@@ -26,6 +26,7 @@ from app.services.persistence import persistence
 from app.services.product_intelligence import classify_product, match_template
 from app.services.reporting import build_report
 from app.services.resource_models import estimate_resources
+from app.services.route_resolution import resolve_origin_context, resolve_route
 
 app = FastAPI(
     title="Sustainable Fashion Carbon Intelligence API",
@@ -365,8 +366,20 @@ async def analyze_product(
     taxonomy = classification["taxonomy"]
     template_match = match_template(str(taxonomy["taxonomy_id"]), signals)
     template = template_match["template"]
-    route = reconstruct_route(str(template["default_route_id"]))
-    resources = estimate_resources(route["steps"], int(template_match["resolved_weight_g"]))
+    # Composite routing: derive the route from (product type × material composition ×
+    # origin) rather than taxonomy-id alone. The resolver scores the routes that cover
+    # this taxonomy against the BOM's composition (Route Library inference_triggers)
+    # and origin (material_origins), and falls back to the template's default_route_id
+    # when nothing more specific wins. Identical signature -> identical route (memoized).
+    composite_route = resolve_route(str(taxonomy["taxonomy_id"]), signals,
+                                    default_route_id=str(template["default_route_id"]))
+    route = reconstruct_route(composite_route["route_id"])
+    # Origin-of-processes: thread the resolved BOM origin into resource_models so the
+    # farming/agro steps use the real material origin's grid factor + transport legs
+    # instead of the route's hardcoded default_country (the "tentative origin" gap).
+    origin_context = resolve_origin_context(signals)
+    resources = estimate_resources(route["steps"], int(template_match["resolved_weight_g"]),
+                                   origin_context=origin_context)
     report = build_report(classification, template_match, route, resources)
 
     # Step 4b: live machine-energy discovery. Off by default so the fast path
@@ -389,6 +402,7 @@ async def analyze_product(
         template_match=template_match,
         route=route,
         resources=resources,
+        composite_route=composite_route,
     )
     if workflow_record:
         inference_trace["records"].insert(len(inference_trace["records"]) - (1 if resources["activity_trace"] else 0), workflow_record)
