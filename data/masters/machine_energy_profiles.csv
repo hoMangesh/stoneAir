@@ -1,5 +1,5 @@
 machine_model_id,unit,electricity,steam,water,compressed_air,natural_gas,source,version,effective_date,expiry_date,approval_status,confidence
-MMOD001,kWh/kg fabric,0.15,0,75,0,0,Brochure-derived: demo 18kW/120kgh,1.1,2026-06-12,,Brochure Approved,0.8
+MMOD001,kWh/kg fabric,0.15,0,75,0,0,Demo seed (18kW/120kg/h) — NOT authentic; pending real Thies iMaster H2O brochure,0.1,2026-06-12,,Pending Brochure Review,0.35
 MMOD002,kWh/kg fabric,1.8,0,0,0,0,KG V2 Circular Knitting Machine proxy; brochure review required,0.1,2026-06-12,,Pending Validation,0.55
 MMOD003,kWh/kg yarn,2.5,0,0,0.1,0,KG V2 Ring Frame proxy; brochure review required,0.1,2026-06-12,,Pending Validation,0.55
 MMOD004,kWh/garment,0.05,0,0,0,0,KG V2 Lockstitch Machine proxy; datasheet review required,0.1,2026-06-12,,Pending Validation,0.55
