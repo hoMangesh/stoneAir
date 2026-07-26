@@ -287,9 +287,26 @@ def _fake_master_with_model(machine_model_id: str, manufacturer: str, model: str
 
 
 def _patch_urlopen_seq(payloads: list[bytes]):
-    """Sequential urlopen responses (root -> page -> pdf ...). Repeats last on overflow."""
-    fakes = [_FakeResponse(p) for p in payloads]
-    return patch.object(bd.urllib.request, "urlopen", side_effect=fakes)
+    """Sequential urlopen responses (root -> page -> pdf ...). Repeats last on overflow.
+
+    The finder/derivation loop may issue more urlopen calls than a test's minimal
+    payload list anticipates (DNS-probe-suppressed crawl hops, search fallbacks).
+    Each call gets a FRESH FakeResponse (a response can only be read once), and once
+    the list is exhausted the last payload is served again so an under-budgeted test
+    fails on assertions, not on StopIteration.
+    """
+    payloads = list(payloads)
+
+    def _provider(*_args, **_kwargs):
+        if not payloads:
+            return _FakeResponse(b"")
+        idx = _provider.calls
+        payload = payloads[idx] if idx < len(payloads) else payloads[-1]
+        _provider.calls += 1
+        return _FakeResponse(payload)
+
+    _provider.calls = 0
+    return patch.object(bd.urllib.request, "urlopen", side_effect=_provider)
 
 
 def test_tier05_registered_brochure_url_derives():
@@ -304,7 +321,8 @@ def test_tier05_registered_brochure_url_derives():
     with patch.object(bd, "load_master_data", return_value=master), \
          _patch_urlopen_seq([brochure_text]), \
          patch.object(bd, "persist_brochure_observations",
-                      side_effect=lambda mid, **kw: persisted.update(kw) or {}) as persist:
+                      side_effect=lambda mid, **kw: persisted.update(kw) or {}) as persist, \
+         patch("app.services.machine_source_finder._host_reachable", return_value=False):
         result = bd.discover_energy("MMOD001")
     assert result.cache_hit is False
     assert result.derived_kwh_per_unit == round(18.0 / 120.0, 4)  # 0.15
@@ -326,9 +344,14 @@ def test_tier05_official_crawl_one_hop_finds_pdf():
     products_html = b'<a href="/products/systems/g38.pdf">G 38 brochure</a>'
     pdf_text = b"Rieter G 38\nInstalled power: 45.0 kW\nThroughput: 300 kg/h\n"
     master = _fake_master_with_model("MMOD003", "Rieter", "G 38", "Ring Frame", brochures=[])
+    # The finder exercises the official-site crawl (path 2) before search (path 3);
+    # disable search so the payload sequence is exactly [root, products, pdf].
     with patch.object(bd, "load_master_data", return_value=master), \
          patch.object(bd, "persist_brochure_observations") as persist, \
-         _patch_urlopen_seq([root_html, products_html, pdf_text]):
+         _patch_urlopen_seq([root_html, products_html, pdf_text]), \
+         patch("app.services.machine_source_finder._host_reachable", return_value=True), \
+         patch.object(bd, "_ddg_candidates", return_value=([], "")), \
+         patch.object(bd, "_candidate_urls_from_bing", return_value=[]):
         result = bd.discover_energy("MMOD003")
     assert result.derived_kwh_per_unit == round(45.0 / 300.0, 4)
     assert any(a.outcome == "derived" and a.strategy == "Official-site crawl" for a in result.attempts)
@@ -356,13 +379,13 @@ def test_second_host_fallback_when_ddg_captcha():
     bing_html = b'<html><a href="https://vendor.com/g38-spec.pdf">spec</a></html>'
     pdf_text = b"Ring frame\nInstalled power: 45.0 kW\nThroughput: 300 kg/h\n"
     master = _fake_master_with_model("MMOD003", "Rieter", "G 38", "Ring Frame", brochures=[])
-    # urlopen call sequence: DDG (captcha), Bing (html), fetch(candidate pdf)
+    # urlopen call sequence: DDG (captcha), Bing (html), fetch(candidate pdf).
+    # Disable the official-site crawl path so only the multi-engine search runs.
     with patch.object(bd, "load_master_data", return_value=master), \
          patch.object(bd, "persist_brochure_observations"), \
-         _patch_urlopen_seq([ddg_captcha, bing_html, pdf_text]):
-        # Make Tier 0.5 a no-op so we exercise the search ladder + Bing fallback.
-        with patch.object(bd, "_try_official_source", return_value=None):
-            result = bd.discover_energy("MMOD003")
+         _patch_urlopen_seq([ddg_captcha, bing_html, pdf_text]), \
+         patch("app.services.machine_source_finder._host_reachable", return_value=False):
+        result = bd.discover_energy("MMOD003")
     outcomes = {a.outcome for a in result.attempts}
     assert "search_host_blocked" in outcomes
     assert result.derived_kwh_per_unit == round(45.0 / 300.0, 4)

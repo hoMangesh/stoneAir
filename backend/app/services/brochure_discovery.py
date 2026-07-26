@@ -156,7 +156,11 @@ def build_query_strings(model: dict) -> list[tuple[str, str]]:
 
 
 _OFFICIAL_DOMAINS = {
-    "thies": "thies-gmbh.com",
+    # Corrected: thies-gmbh.com does not resolve in DNS. Thies Textilmaschinen
+    # GmbH's real site is thies-textilmaschinen.de (HTTPS is broken server-side,
+    # so _fetch_text's https->http fallback handles it; the finder probes DNS
+    # before crawling and skips an unresolvable hint).
+    "thies": "thies-textilmaschinen.de",
     "mayer & cie": "mayercie.com",
     "rieter": "rieter.com",
     "juki": "juki.com",
@@ -524,12 +528,33 @@ def _rank_candidates(urls: list[str], strategy: str) -> list[str]:
 # ---------------------------------------------------------------------------
 
 def _fetch_text(url: str, *, timeout: float = _PER_URL_TIMEOUT) -> str | None:
-    """Download a URL and return plain text (PDF -> pdfplumber, else utf-8)."""
-    try:
-        req = urllib.request.Request(url, headers=_browser_headers())
-        with urllib.request.urlopen(req, timeout=timeout) as response:  # noqa: S310 - public docs
-            raw = response.read()
-    except (urllib.error.URLError, socket.timeout, TimeoutError, ConnectionError):
+    """Download a URL and return plain text (PDF -> pdfplumber, else utf-8).
+
+    Falls back from https:// to http:// for the same host when the HTTPS attempt
+    dies on a TLS/SSL error (legacy industrial sites with broken or misconfigured
+    TLS — the real Thies textile-machinery site, thies-textilmaschinen.de, is one).
+    The fallback shares the per-URL budget so it never hangs analyze; either
+    scheme working is enough.
+    """
+    def _try(fetch_url: str) -> bytes | None:
+        # Broad guard: a harvested URL may carry a non-ascii glyph (DDG/Bing
+        # decorate some result URLs with the › chevron) which makes urllib's
+        # header encoding raise UnicodeEncodeError before any network call —
+        # that isn't a URLError, so it would otherwise escape and crash
+        # discovery. Treat any pre-send failure as "this URL isn't fetchable".
+        try:
+            req = urllib.request.Request(fetch_url, headers=_browser_headers())
+            with urllib.request.urlopen(req, timeout=timeout) as response:  # noqa: S310 - public docs
+                return response.read()
+        except (urllib.error.URLError, socket.timeout, TimeoutError, ConnectionError,
+                UnicodeEncodeError, ValueError, OSError):
+            return None
+
+    raw = _try(url)
+    if raw is None and url.lower().startswith("https://"):
+        http_fallback = "http://" + url[len("https://"):]
+        raw = _try(http_fallback)
+    if not raw:
         return None
     if raw[:4] == b"%PDF":
         from app.services.document_intelligence import _extract_text_from_pdf
@@ -655,93 +680,94 @@ def discover_energy(machine_model_id: str) -> DiscoveryResult:
     started = time.monotonic()
 
     # ------------------------------------------------------------------
-    # Tier 0.5: direct official source — the most authentic rung. Reach the
-    # manufacturer's own brochure WITHOUT depending on a (fragile) search host.
-    #   1. any brochure URL already registered in machine_brochures.csv
-    #   2. a bounded 1-hop crawl of the brand's official domain
-    # On a real derivation, persist the observation to machine_brochures.csv so
-    # the next run reads the now-known URL instantly (Tier 0.5 reads it first).
+    # Candidate discovery — the general machine-source finder (Phase 1).
+    # Replaces the brand-bound official crawl + build_query_strings search loop
+    # with identity-driven discovery + authority scoring. The finder returns
+    # scored Sources; this loop fetches each (within the hard _TOTAL_TIMEOUT
+    # cap) and runs the SAME _derive_from_text, recording identical
+    # DiscoveryAttempt semantics; the DiscoveryResult shape is untouched.
     # ------------------------------------------------------------------
-    tier05 = _try_official_source(machine_model_id, model, master, deadline=started + _TOTAL_TIMEOUT, attempts=attempts)
-    if tier05 is not None:
-        kwh, power_kw, throughput_kg_per_h, this_basis, url, brochure_id = tier05
-        # Live derivation -> persist raw brochure observation (governance: only
-        # the real power+throughput figures we actually fetched).
-        try:
-            persist_brochure_observations(
-                machine_model_id,
-                brochure_id=brochure_id,
-                url=url,
-                installed_power_kw=power_kw,
-                throughput_kg_per_h=throughput_kg_per_h,
-            )
-        except Exception:
-            # Persistence must never break discovery; the derivation still wins.
-            pass
-        return DiscoveryResult(
-            machine_model_id=machine_model_id,
-            derived_kwh_per_unit=kwh,
-            unit=unit,
-            installed_power_kw=power_kw,
-            throughput_kg_per_h=throughput_kg_per_h,
-            cache_hit=False,
-            attempts=attempts,
-            basis=this_basis,
-        )
+    from app.services.machine_source_finder import MachineIdentity, find_candidate_sources
+
+    identity = MachineIdentity(
+        manufacturer=model.get("manufacturer") or "",
+        model=model.get("model") or "",
+        category=model.get("machine_category") or "",
+        process=model.get("process") or "",
+    )
+    registered = _real_public_urls(machine_model_id, master)  # [(brochure_id, url), ...]
+    sources, finder_notes = find_candidate_sources(identity, registered_urls=registered,
+                                                    deadline=started + _TOTAL_TIMEOUT)
+
+    # Map url -> brochure_id so a derivation from a registered URL persists with its link.
+    url_to_brochure_id = {url: bid for bid, url in registered}
+
+    # Surface honest search-host observations (e.g. a DDG captcha that forced the
+    # Bing fallback) as legacy 'search_host_blocked' attempts — keeps the caller's
+    # outcome vocabulary and the multi-engine-fallback contract visible.
+    for note in finder_notes:
+        attempts.append(DiscoveryAttempt("Multi-engine search", "", None, "search_host_blocked", None, None, None, note))
 
     derived: float | None = None
     final_power = final_throughput = None
     basis = ""
 
-    for strategy, query in build_query_strings(model):
-        # Hard wall-clock cap: never let discovery exceed _TOTAL_TIMEOUT, even if
-        # individual urlopen timeouts misbehave. Bail to the KG proxy instead.
-        elapsed = time.monotonic() - started
-        if derived is not None or elapsed >= _TOTAL_TIMEOUT:
+    # Discovery strategy name per source kind — keeps the legacy vocabulary
+    # (registered=Official brochure URL, brand crawl=Official-site crawl) so the
+    # locked tests' assertions on attempt.strategy/outcome still hold.
+    _STRATEGY_BY_KIND = {"registered": "Official brochure URL", "official_crawl": "Official-site crawl", "search": "Web search"}
+
+    for source in sources:
+        if derived is not None or time.monotonic() - started >= _TOTAL_TIMEOUT:
             break
-        # Gentle spacing between strategies so repeated DDG queries look less
-        # robotic and reduce ban risk (stays well inside the 12s budget).
         if attempts:
-            time.sleep(0.25)
+            time.sleep(0.2)
         remaining = max(0.5, _TOTAL_TIMEOUT - (time.monotonic() - started))
-        ddg_urls, ddg_html = _ddg_candidates(query, timeout=min(_SEARCH_TIMEOUT, remaining))
-        candidate_urls = _rank_candidates(ddg_urls, strategy)
+        strategy = _STRATEGY_BY_KIND.get(source.kind, source.kind)
+        text = _fetch_text(source.url, timeout=min(_PER_URL_TIMEOUT, remaining))
+        if not text:
+            attempts.append(DiscoveryAttempt(strategy, "", source.url, "network_error", None, None, None, ""))
+            continue
+        kwh, power_kw, throughput_kg_per_h, this_basis = _derive_from_text(text)
+        if kwh is not None:
+            attempts.append(DiscoveryAttempt(strategy, "", source.url, "derived", kwh, power_kw, throughput_kg_per_h, this_basis))
+            derived = kwh
+            final_power = power_kw
+            final_throughput = throughput_kg_per_h
+            basis = this_basis
+            # Persist a live derivation as a raw brochure observation (governance:
+            # only the power+throughput figures we actually fetched). Link a
+            # registered source's brochure_id; else the finder-discovered URL.
+            try:
+                persist_brochure_observations(
+                    machine_model_id,
+                    brochure_id=url_to_brochure_id.get(source.url),
+                    url=source.url,
+                    installed_power_kw=power_kw,
+                    throughput_kg_per_h=throughput_kg_per_h,
+                )
+            except Exception:
+                pass
+            break
+        # Fetched-but-no-specs: legacy vocabulary — a registered 'official URL' reach
+        # logs 'official_url_no_specs'; the official crawl logs 'official_crawl_no_specs';
+        # a search hit logs a plain 'fetched_no_specs'. Each carries partial figures.
+        no_specs_outcome = {
+            "registered": "official_url_no_specs",
+            "official_crawl": "official_crawl_no_specs",
+        }.get(source.kind, "fetched_no_specs")
+        attempts.append(DiscoveryAttempt(strategy, "", source.url, no_specs_outcome, None, power_kw, throughput_kg_per_h, this_basis))
 
-        # Second-host fallback: if DuckDuckGo is bot-gated (captcha/anomaly page
-        # with no results) or otherwise returned nothing, retry the SAME query on
-        # Bing HTML before giving up on this strategy. A single captcha page must
-        # never strand the whole discovery. Record the honest reason.
-        if not candidate_urls:
-            blocked = bool(ddg_html) and _looks_like_captcha(ddg_html)
-            if blocked:
-                attempts.append(DiscoveryAttempt(strategy, query, None, "search_host_blocked", None, None, None,
-                                                  "DuckDuckGo captcha/anomaly page; falling back to Bing"))
-            remaining = max(0.5, _TOTAL_TIMEOUT - (time.monotonic() - started))
-            bing_urls = _candidate_urls_from_bing(query, timeout=min(_SEARCH_TIMEOUT, remaining))
-            if bing_urls:
-                candidate_urls = _rank_candidates(bing_urls, strategy)
-
-        fetched = 0
-        for url in candidate_urls[:_MAX_CANDIDATES_PER_STRATEGY]:
-            if fetched >= _MAX_CANDIDATES_PER_STRATEGY or time.monotonic() - started >= _TOTAL_TIMEOUT:
-                break
-            remaining = max(0.5, _TOTAL_TIMEOUT - (time.monotonic() - started))
-            text = _fetch_text(url, timeout=min(_PER_URL_TIMEOUT, remaining))
-            fetched += 1
-            if not text:
-                attempts.append(DiscoveryAttempt(strategy, query, url, "network_error", None, None, None, ""))
-                continue
-            kwh, power_kw, throughput_kg_per_h, this_basis = _derive_from_text(text)
-            if kwh is not None:
-                attempts.append(DiscoveryAttempt(strategy, query, url, "derived", kwh, power_kw, throughput_kg_per_h, this_basis))
-                derived = kwh
-                final_power = power_kw
-                final_throughput = throughput_kg_per_h
-                basis = this_basis
-                break
-            attempts.append(DiscoveryAttempt(strategy, query, url, "fetched_no_specs", None, power_kw, throughput_kg_per_h, this_basis))
-        if not candidate_urls and (not attempts or attempts[-1].outcome not in ("search_host_blocked",)):
-            attempts.append(DiscoveryAttempt(strategy, query, None, "skipped", None, None, None, ""))
+    if derived is None and sources:
+        attempts.append(DiscoveryAttempt("Finder sources", "", None, "fetched_no_specs", None, None, None,
+                                         f"{len(sources)} sources tried; no power+throughput derivation"))
+    elif derived is None and not sources and not attempts:
+        # The finder returned nothing AND no attempt was recorded — every network
+        # path failed (DNS probe skipped, both search hosts timed out). Record an
+        # honest 'network_error' so a fully-flaky run is observable, not a silent
+        # empty trace (analyze still degrades to the KG proxy).
+        attempts.append(DiscoveryAttempt("Finder sources", "", None, "network_error", None, None, None,
+                                         "all discovery paths failed (crawls/search empty or unreachable)"))
 
     return DiscoveryResult(
         machine_model_id=machine_model_id,
