@@ -1,6 +1,7 @@
 from __future__ import annotations
 
 from app.services.knowledge_loader import confidence_level, load_master_data
+from app.services.source_tier import adjust_activity_confidence, source_tier_from_profile
 
 
 # ---------------------------------------------------------------------------
@@ -313,6 +314,13 @@ def estimate_resources(route_steps: list[dict[str, str]], weight_g: int,
             machine_confidence = _as_float(machine.get("confidence"), 0.35)
             activity_confidence = min(machine_confidence, factor_confidence, _as_float(step.get("confidence_prior"), 0.35))
 
+            # Phase 3 — tier-aware confidence: a derivation is only as good as its
+            # source tier. Read the persisted energy profile's approval/source and
+            # adjust the activity confidence + label its evidence tier. Works fully
+            # offline (reads the profile row already merged into `machine`).
+            tier = source_tier_from_profile(machine, category=machine.get("machine_category", ""))
+            activity_confidence, tier_label = adjust_activity_confidence(activity_confidence, tier)
+
             step_energy_kwh += electricity_kwh
             step_water_l += machine_water_l
             step_carbon += carbon
@@ -334,6 +342,8 @@ def estimate_resources(route_steps: list[dict[str, str]], weight_g: int,
                 "carbon_kgco2e": round(carbon, 4),
                 "source": machine.get("source", ""),
                 "approval_status": machine.get("approval_status", ""),
+                "source_tier": tier.tier,
+                "source_tier_label": tier_label,
                 "confidence": confidence_level(activity_confidence),
             }
             activity_trace.append(activity)
@@ -350,6 +360,7 @@ def estimate_resources(route_steps: list[dict[str, str]], weight_g: int,
                     "water_l": round(machine_water_l, 2),
                     "brochure_url": machine.get("brochure_url", ""),
                     "datasheet_url": machine.get("datasheet_url", ""),
+                    "source_tier": tier.tier,
                     "confidence": activity["confidence"],
                     "source": machine.get("source", ""),
                 }

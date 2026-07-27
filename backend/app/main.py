@@ -27,6 +27,13 @@ from app.services.product_intelligence import classify_product, match_template
 from app.services.reporting import build_report
 from app.services.resource_models import estimate_resources
 from app.services.route_resolution import resolve_origin_context, resolve_route
+from app.services.source_tier import (
+    COVERAGE_STATUS_APPROVED,
+    COVERAGE_STATUS_DERIVED_APPROX,
+    COVERAGE_STATUS_PROXY,
+    COVERAGE_STATUS_UNSUPPORTED,
+    source_tier_from_profile,
+)
 
 app = FastAPI(
     title="Sustainable Fashion Carbon Intelligence API",
@@ -261,6 +268,97 @@ def brochure_fetch(
     if not fetched.get("text"):
         return {"machine_model_id": machine_model_id, "url": url, "error": fetched.get("error", "no extractable text")}
     return extract_brochure(machine_model_id, fetched["text"], source=url)
+
+
+@app.get("/api/brochure-coverage")
+def brochure_coverage(live: bool = False) -> dict[str, object]:
+    """Honest coverage sweep over the CURRENT machine catalog.
+
+    For every machine model in ``machine_models`` (today: the 6 seed rows — the
+    52-machine recommender bridge is a deferred data-change step), report its
+    energy-profile state and the derivation-rule coverage, plus an aggregate
+    derived-vs-proxy-vs-unsupported ratio that becomes the confidence signal for
+    the whole carbon layer.
+
+    Offline by default (resolved from persisted profiles + the derivation rules
+    registry): no network, instant. With ``?live=true`` run live discovery per
+    machine (capped as on /api/analyze) — opt-in like ``enrich_machines``.
+    """
+    from collections import Counter
+
+    from app.services.derivation_rules import has_category_rule
+
+    master = load_master_data()
+    machine_energy_by_model = master["machine_energy_by_model"]
+    models = master["datasets"]["machine_models"]
+
+    # Live discovery cap, mirroring /api/analyze so a coverage sweep can't hang.
+    _MAX_LIVE = 3
+    live_used = 0
+
+    rows: list[dict] = []
+    for model in models:
+        model_id = model["machine_model_id"]
+        category = model.get("machine_category", "")
+        profile = machine_energy_by_model.get(model_id, {})
+        tier = source_tier_from_profile(profile, category=category)
+        rule_supported = has_category_rule(category)
+
+        profile_status = COVERAGE_STATUS_PROXY
+        derivation_basis = "KG proxy energy profile (pending brochure derivation)"
+        source_tier = tier.tier
+
+        if not profile:
+            profile_status = COVERAGE_STATUS_UNSUPPORTED if not rule_supported else COVERAGE_STATUS_PROXY
+            derivation_basis = "no energy profile row; KG-proxy retained" if rule_supported else "no profile + no derivation rule"
+            source_tier = "unsupported" if not rule_supported else "none"
+        elif "brochure approved" in (profile.get("approval_status") or "").lower() \
+                or "brochure-derived" in (profile.get("source") or "").lower():
+            profile_status = COVERAGE_STATUS_APPROVED
+            derivation_basis = f"DB-approved: {profile.get('source', '')}"
+            source_tier = "manufacturer"
+        elif live and live_used < _MAX_LIVE:
+            result = discover_energy(model_id)
+            live_used += 1
+            if result.derived_kwh_per_unit is not None and not result.cache_hit:
+                profile_status = COVERAGE_STATUS_DERIVED_APPROX
+                derivation_basis = result.basis
+                source_tier = "manufacturer"
+
+        if not rule_supported and profile_status == COVERAGE_STATUS_PROXY:
+            # A proxy on an unsupported-rule category is the queue signal (Phase 4).
+            profile_status = COVERAGE_STATUS_UNSUPPORTED
+
+        rows.append({
+            "machine_model_id": model_id,
+            "manufacturer": model.get("manufacturer", ""),
+            "model": model.get("model", ""),
+            "machine_category": category,
+            "process": model.get("process", ""),
+            "profile_status": profile_status,
+            "source_tier": source_tier,
+            "source_tier_label": tier.label,
+            "derivation_basis": derivation_basis,
+            "current_kwh": profile.get("electricity", ""),
+            "current_unit": profile.get("unit", ""),
+            "approval_status": profile.get("approval_status", ""),
+            "rule_supported": rule_supported,
+        })
+
+    counts = Counter(r["profile_status"] for r in rows)
+    total = len(rows)
+    return {
+        "live": live,
+        "machines": rows,
+        "aggregate": {
+            "total": total,
+            "approved": counts.get(COVERAGE_STATUS_APPROVED, 0),
+            "derived_approx": counts.get(COVERAGE_STATUS_DERIVED_APPROX, 0),
+            "proxy": counts.get(COVERAGE_STATUS_PROXY, 0),
+            "unsupported": counts.get(COVERAGE_STATUS_UNSUPPORTED, 0),
+            "ratio_approved": round((counts.get(COVERAGE_STATUS_APPROVED, 0) + counts.get(COVERAGE_STATUS_DERIVED_APPROX, 0)) / total, 3) if total else 0.0,
+        },
+    }
 
 
 def _enrich_route_machines(machine_breakdown: list[dict], *, enrich: bool) -> dict[str, object]:
