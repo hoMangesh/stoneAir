@@ -22,6 +22,35 @@ LIQUOR_RATIO_PATTERN = re.compile(
     r"(?:liquor\s*ratio|bath\s*ratio|water\s*ratio)\D{0,20}(?P<value>\d+(?:\.\d+)?)\s*:\s*(?P<denominator>\d+(?:\.\d+)?)",
     re.IGNORECASE,
 )
+# Cycle time for batch processes (dyeing, washing): "cycle time 45 min", "process 60 min",
+# "cycle time: 1.5 h". Used to convert installed power to kWh per batch.
+CYCLE_TIME_PATTERN = re.compile(
+    r"(?:cycle\s*time|process\s*time|cycle\s*duration)\D{0,12}(?P<value>\d+(?:\.\d+)?)\s*"
+    r"(?P<unit>h|hr|hrs|hour|hours|min|mins|minutes)\b",
+    re.IGNORECASE,
+)
+# Batch / load capacity in kg of material (dyeing machine max load).
+BATCH_KG_PATTERN = re.compile(
+    r"(?:max\s*(?:load|batch|capacity|charge)|batch\s*(?:size|capacity|load)|load\s*size|charging\s*capacity)"
+    r"\D{0,12}(?P<value>\d+(?:\.\d+)?)\s*(?P<unit>kg)\b",
+    re.IGNORECASE,
+)
+# Linear feed / cutting speed and fabric width — per-area derivation for cutters/spreaders.
+LINEAR_SPEED_PATTERN = re.compile(
+    r"(?:cut(?:ting)?\s*speed|feed\s*speed|spreading\s*speed|line\s*speed|speed)\D{0,12}"
+    r"(?P<value>\d+(?:\.\d+)?)\s*(?P<unit>m/min|m/min\.|meters/min|metres/min|m/s)\b",
+    re.IGNORECASE,
+)
+WIDTH_PATTERN = re.compile(
+    r"(?:working\s*width|fabric\s*width|cutting\s*width|width)\D{0,12}(?P<value>\d+(?:\.\d+)?)\s*"
+    r"(?P<unit>m|metre|meter|cm|mm)\b",
+    re.IGNORECASE,
+)
+# Area throughput for printing/coating (m2/h or m2/s).
+AREA_THROUGHPUT_PATTERN = re.compile(
+    r"(?P<value>\d+(?:\.\d+)?)\s*(?P<unit>m2/h|m2/hr|m2/hour|m²/h|m²/hour|sqm/h|sqm/hour)\b",
+    re.IGNORECASE,
+)
 
 
 def _first_matches(pattern: re.Pattern[str], text: str, limit: int = 6) -> list[dict[str, str]]:
@@ -108,9 +137,55 @@ def machine_intelligence_summary() -> dict[str, object]:
             "energy_profiles": len(datasets["machine_energy_profiles"]),
             "source_status": dict(status_counter),
             "extraction_status": dict(extraction_counter),
+            # Phase 3 — honest brochure-coverage ratio over the current catalog:
+            # the derived-vs-proxy split that becomes the confidence signal for
+            # the whole carbon layer. Computed offline from persisted profiles.
+            "brochure_coverage": _brochure_coverage_summary(datasets["machine_models"], energy_by_model),
         },
         "records": records,
         "extraction_fields": ["power", "throughput", "capacity", "liquor_ratio"],
+    }
+
+
+def _brochure_coverage_summary(machine_models: list[dict], energy_by_model: dict) -> dict[str, object]:
+    """Aggregate derived-vs-proxy-vs-unsupported coverage over the catalog.
+
+    Offline: reads persisted energy profiles + the derivation-rule registry. No
+    live discovery here (live is opt-in on /api/brochure-coverage). Mirrors the
+    endpoint's aggregate so /api/machine-intelligence surfaces the same ratio."""
+    from app.services.derivation_rules import has_category_rule
+    from app.services.source_tier import (
+        COVERAGE_STATUS_APPROVED,
+        COVERAGE_STATUS_DERIVED_APPROX,
+        COVERAGE_STATUS_PROXY,
+        COVERAGE_STATUS_UNSUPPORTED,
+        source_tier_from_profile,
+    )
+
+    approved = derived = proxy = unsupported = 0
+    for model in machine_models:
+        model_id = model["machine_model_id"]
+        category = model.get("machine_category", "")
+        profile = energy_by_model.get(model_id, {})
+        rule_supported = has_category_rule(category)
+        approval = (profile.get("approval_status") or "").lower()
+        source = (profile.get("source") or "").lower()
+        if profile and ("brochure approved" in approval or "brochure-derived" in source):
+            approved += 1
+        elif profile and rule_supported:
+            proxy += 1
+        elif not rule_supported:
+            unsupported += 1
+        else:
+            proxy += 1
+    total = len(machine_models)
+    return {
+        "total": total,
+        "approved": approved,
+        "derived_approx": derived,
+        "proxy": proxy,
+        "unsupported": unsupported,
+        "ratio_approved": round((approved + derived) / total, 3) if total else 0.0,
     }
 
 
