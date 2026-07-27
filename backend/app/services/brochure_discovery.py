@@ -45,7 +45,9 @@ from app.services.brochure_pipeline import (
     _parse_throughput_kg_per_h,
     _CATEGORY_UNIT,
     persist_brochure_observations,
+    record_unsupported_observation,
 )
+from app.services.derivation_rules import has_category_rule
 
 
 # ---------------------------------------------------------------------------
@@ -565,8 +567,35 @@ def _fetch_text(url: str, *, timeout: float = _PER_URL_TIMEOUT) -> str | None:
         return None
 
 
-def _derive_from_text(text: str) -> tuple[float | None, float | None, float | None, str]:
-    """Return (kwh_per_unit, power_kw, throughput_kg_per_h, basis) from text."""
+def _derive_from_text(
+    text: str, category: str = ""
+) -> tuple[float | None, float | None, float | None, str]:
+    """Return (kwh_per_unit, power_kw, throughput_kg_per_h, basis) from text.
+
+    When ``category`` is given, dispatch to the per-category derivation rule
+    (Phase 2; see :mod:`derivation_rules`) so a dyeing/sewing/cutting brochure
+    uses its real physics (batch×cycle, per-garment, feed×area) instead of the
+    generic ``kW ÷ kg/h`` shape. With no category (or an unknown one) it
+    degrades to mass-rate — keeping the locked legacy behaviour and tests.
+    """
+    if category:
+        from app.services.derivation_rules import Result, derive_for_category
+
+        class _Parse:
+            power = staticmethod(_parse_power)
+            throughput_kg_per_h = staticmethod(_parse_throughput_kg_per_h)
+
+        result: Result | None = derive_for_category(category, text, _Parse)
+        if result is not None:
+            return (
+                result.kwh_per_unit if result.rule_name != "unknown-power-only" else None,
+                result.installed_power_kw,
+                result.throughput_kg_per_h,
+                result.basis,
+            )
+        return None, None, None, "no power figure found"
+
+    # Legacy mass-rate shape (locked tests + the no-category fallback path).
     power_kw, power_raw = _parse_power(text)
     throughput_kg_per_h, throughput_raw = _parse_throughput_kg_per_h(text)
     if power_kw and throughput_kg_per_h and throughput_kg_per_h > 0:
@@ -610,7 +639,7 @@ def _try_official_source(
         if not text:
             attempts.append(DiscoveryAttempt("Official brochure URL", "", url, "network_error", None, None, None, ""))
             continue
-        kwh, power_kw, throughput_kg_per_h, this_basis = _derive_from_text(text)
+        kwh, power_kw, throughput_kg_per_h, this_basis = _derive_from_text(text, (model or {}).get("machine_category") or "")
         if kwh is not None:
             attempts.append(DiscoveryAttempt("Official brochure URL", "", url, "derived", kwh, power_kw, throughput_kg_per_h, this_basis))
             return kwh, power_kw, throughput_kg_per_h, this_basis, url, brochure_id
@@ -627,7 +656,7 @@ def _try_official_source(
         if not text:
             attempts.append(DiscoveryAttempt("Official-site crawl", "", url, "network_error", None, None, None, ""))
             continue
-        kwh, power_kw, throughput_kg_per_h, this_basis = _derive_from_text(text)
+        kwh, power_kw, throughput_kg_per_h, this_basis = _derive_from_text(text, (model or {}).get("machine_category") or "")
         if kwh is not None:
             attempts.append(DiscoveryAttempt("Official-site crawl", "", url, "derived", kwh, power_kw, throughput_kg_per_h, this_basis))
             return kwh, power_kw, throughput_kg_per_h, this_basis, url, None
@@ -711,6 +740,10 @@ def discover_energy(machine_model_id: str) -> DiscoveryResult:
     derived: float | None = None
     final_power = final_throughput = None
     basis = ""
+    # Phase 4 — remember the last power figure parsed during a no-derivation fetch,
+    # so a fully unsupported-category machine still queues its parseable evidence.
+    observed_power_for_queue: float | None = None
+    observed_basis_for_queue = ""
 
     # Discovery strategy name per source kind — keeps the legacy vocabulary
     # (registered=Official brochure URL, brand crawl=Official-site crawl) so the
@@ -728,7 +761,7 @@ def discover_energy(machine_model_id: str) -> DiscoveryResult:
         if not text:
             attempts.append(DiscoveryAttempt(strategy, "", source.url, "network_error", None, None, None, ""))
             continue
-        kwh, power_kw, throughput_kg_per_h, this_basis = _derive_from_text(text)
+        kwh, power_kw, throughput_kg_per_h, this_basis = _derive_from_text(text, identity.category)
         if kwh is not None:
             attempts.append(DiscoveryAttempt(strategy, "", source.url, "derived", kwh, power_kw, throughput_kg_per_h, this_basis))
             derived = kwh
@@ -757,6 +790,11 @@ def discover_energy(machine_model_id: str) -> DiscoveryResult:
             "official_crawl": "official_crawl_no_specs",
         }.get(source.kind, "fetched_no_specs")
         attempts.append(DiscoveryAttempt(strategy, "", source.url, no_specs_outcome, None, power_kw, throughput_kg_per_h, this_basis))
+        # Phase 4 — an unsupported-category machine with a parseable power figure
+        # (but no full derivation) queues its evidence for reviewer rule authoring.
+        if power_kw and not has_category_rule(identity.category):
+            observed_power_for_queue = power_kw
+            observed_basis_for_queue = this_basis
 
     if derived is None and sources:
         attempts.append(DiscoveryAttempt("Finder sources", "", None, "fetched_no_specs", None, None, None,
@@ -768,6 +806,22 @@ def discover_energy(machine_model_id: str) -> DiscoveryResult:
         # empty trace (analyze still degrades to the KG proxy).
         attempts.append(DiscoveryAttempt("Finder sources", "", None, "network_error", None, None, None,
                                          "all discovery paths failed (crawls/search empty or unreachable)"))
+
+    # Phase 4 — queue the unsupported-category observation (best-effort/no-rule,
+    # lowest-confidence). Only fires when a live run actually parsed power for a
+    # category that has no derivation rule. Never raises; governance preserved:
+    # this is source evidence, never a fabricated value, never an auto-promotion.
+    if derived is None and observed_power_for_queue:
+        try:
+            record_unsupported_observation(
+                machine_model_id,
+                category=identity.category,
+                installed_power_kw=observed_power_for_queue,
+                observed_text=observed_basis_for_queue,
+                rule_name="unknown-power-only",
+            )
+        except Exception:
+            pass
 
     return DiscoveryResult(
         machine_model_id=machine_model_id,

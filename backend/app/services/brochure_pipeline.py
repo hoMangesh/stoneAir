@@ -32,6 +32,7 @@ from app.services import machine_intelligence as mi
 
 _ENERGY_PROFILES_CSV = MASTER_DATA_ROOT / "machine_energy_profiles.csv"
 _MACHINE_BROCHURES_CSV = MASTER_DATA_ROOT / "machine_brochures.csv"
+_SPEC_EXTRACTIONS_CSV = MASTER_DATA_ROOT / "machine_spec_extractions.csv"
 
 # Target unit per machine category. The energy profile table is keyed per
 # machine model, but the *physical* unit is determined by the category
@@ -105,34 +106,56 @@ def extract_brochure(machine_model_id: str, text: str, source: str = "brochure_t
     power_kw, power_raw = _parse_power(text)
     throughput_kg_per_h, throughput_raw = _parse_throughput_kg_per_h(text)
 
+    # Per-category derivation (Phase 2): dispatch through the same rules the live
+    # discovery ladder uses, so the review candidate and the live run agree on
+    # kWh and basis. The category comes from the machine_models master row.
+    from app.services.derivation_rules import derive_for_category
+
+    machine_category = (_adapter_for(machine_model_id, load_master_data()) or {}).get("machine_category", "")
+
+    class _Parse:
+        power = staticmethod(_parse_power)
+        throughput_kg_per_h = staticmethod(_parse_throughput_kg_per_h)
+
+    rule_result = derive_for_category(machine_category, text, _Parse)
+
     derived_kwh_per_unit = None
     derivation_basis = ""
     confidence = 0.35
-    if power_kw and throughput_kg_per_h and throughput_kg_per_h > 0:
-        derived_kwh_per_unit = round(power_kw / throughput_kg_per_h, 4)
-        derivation_basis = f"{power_raw} / {throughput_raw} = {power_kw} kW / {throughput_kg_per_h} kg/h"
-        # A derivation from BOTH real power and real throughput is the gold path;
-        # power-only (no throughput) is unusable for a per-unit energy number.
-        confidence = 0.8
-    elif power_kw:
-        derivation_basis = f"{power_raw} found but no kg/h throughput -> no per-unit derivation possible"
+    if rule_result is not None and rule_result.rule_name != "unknown-power-only":
+        derived_kwh_per_unit = rule_result.kwh_per_unit
+        derivation_basis = rule_result.basis
+        confidence = rule_result.confidence
+    elif rule_result is not None and rule_result.rule_name == "unknown-power-only":
+        # Power observed but no throughput -> honest "no per-unit derivation"
+        # with the power-only evidence recorded; reviewer sees partial data.
+        derivation_basis = rule_result.basis
         confidence = 0.45
+        derived_kwh_per_unit = None
+    else:
+        derivation_basis = "no power figure found -> no per-unit derivation possible"
+        confidence = 0.3
 
-    unit = _CATEGORY_UNIT.get(
-        (_adapter_for(machine_model_id, load_master_data()) or {}).get("machine_category", ""),
-        "kWh/kg",
-    )
+    # Keep power/throughput fields populated for the candidate record even when
+    # the rule produced a derivation via a non-mass-rate shape (batch×cycle etc.).
+    if power_kw:
+        rule_power_kw = power_kw
+    else:
+        rule_power_kw = rule_result.installed_power_kw if rule_result is not None else None
+
+    unit = _CATEGORY_UNIT.get(machine_category, "kWh/kg")
 
     return {
         "machine_model_id": machine_model_id,
         "source": source,
         "candidate_specs": candidates["extracted_fields"],
         "derivation": {
-            "installed_power_kw": power_kw,
+            "installed_power_kw": rule_power_kw,
             "throughput_kg_per_h": throughput_kg_per_h,
             "derived_kwh_per_unit": derived_kwh_per_unit,
             "unit": unit,
             "derivation_basis": derivation_basis,
+            "rule": rule_result.rule_name if rule_result is not None else "none",
             "confidence": confidence_level(confidence),
         },
         "current_profile": (load_master_data()["machine_energy_by_model"]).get(machine_model_id, {}),
@@ -275,25 +298,150 @@ def persist_brochure_observations(
     }
 
 
+def record_unsupported_observation(
+    machine_model_id: str,
+    *,
+    category: str,
+    installed_power_kw: float | None,
+    observed_text: str = "",
+    rule_name: str = "unknown-power-only",
+) -> dict[str, object]:
+    """Phase 4 — queue an unsupported-category observation for reviewer action.
+
+    When a live discovery reached a machine whose category has **no derivation
+    rule** (so the dispatcher's ``rule_unknown`` ran) but a power figure *was*
+    parseable, record the partial evidence into ``machine_spec_extractions.csv``
+    so a reviewer sees it and the backlog is actionable: the next row's
+    ``next_action`` is "Author a derivation rule for {category}".
+
+    Governance (same as persist_brochure_observations): writes ONLY real evidence
+    — never fabricates a value. ``extraction_method="best-effort/no-rule"``,
+    ``approval_status="Needs Derivation Rule"``. A *power-only* observation
+    stores ``field_name="installed_power"``, normalized to kW, conf 0.35 — the
+    best-effort posture is *lowest-confidence*, not a high-conf proxy, and the
+    route's process-level fallback still guards the step's carbon.
+
+    Idempotent: if a ``best-effort/no-rule`` row already exists for this model +
+    field, the values are updated in place rather than duplicated, so repeated
+    live runs of a stubborn-unsupported machine don't bloat the master.
+    """
+    if not machine_model_id or not category:
+        return {"machine_model_id": machine_model_id, "written": False, "reason": "no model/category"}
+    if installed_power_kw is None or installed_power_kw <= 0:
+        return {"machine_model_id": machine_model_id, "written": False, "reason": "no parseable evidence"}
+
+    rows: list[dict[str, str]] = []
+    fieldnames: list[str] = []
+    found = False
+    with _SPEC_EXTRACTIONS_CSV.open(newline="", encoding="utf-8") as handle:
+        reader = csv.DictReader(handle)
+        fieldnames = list(reader.fieldnames or [])
+        for row in reader:
+            same_model = row.get("machine_model_id") == machine_model_id
+            is_best_effort = (row.get("extraction_method") or "").lower().startswith("best-effort")
+            if same_model and is_best_effort and not found:
+                # Update in place — keep the latest observed power / source.
+                row["raw_value"] = f"{installed_power_kw:g} kW"
+                row["normalized_value"] = f"{installed_power_kw:g}"
+                row["unit"] = "kW"
+                row["extraction_method"] = "best-effort/no-rule"
+                row["confidence"] = "0.35"
+                row["approval_status"] = "Needs Derivation Rule"
+                row["source"] = observed_text[:120] or row.get("source", "")
+                found = True
+            rows.append(row)
+
+    if not found:
+        # Append a new best-effort evidence row. extraction_id is unique per row.
+        new_id = f"MEXT-NO-RULE-{machine_model_id}"
+        rows.append({
+            "extraction_id": new_id,
+            "machine_model_id": machine_model_id,
+            "brochure_id": "",
+            "field_name": "installed_power",
+            "raw_value": f"{installed_power_kw:g} kW",
+            "normalized_value": f"{installed_power_kw:g}",
+            "unit": "kW",
+            "page_or_section": rule_name,
+            "extraction_method": "best-effort/no-rule",
+            "confidence": "0.35",
+            "version": "0.1",
+            "effective_date": "",
+            "expiry_date": "",
+            "source": observed_text[:120],
+            "approval_status": "Needs Derivation Rule",
+        })
+
+    with _SPEC_EXTRACTIONS_CSV.open("w", newline="", encoding="utf-8") as handle:
+        writer = csv.DictWriter(handle, fieldnames=fieldnames or list(rows[0].keys()))
+        writer.writeheader()
+        writer.writerows(rows)
+
+    load_master_data.cache_clear()
+
+    return {
+        "machine_model_id": machine_model_id,
+        "category": category,
+        "rule_name": rule_name,
+        "installed_power_kw": installed_power_kw,
+        "written": True,
+        "written_to": str(_SPEC_EXTRACTIONS_CSV),
+        "next_action": f"Author a derivation rule for {category} (see observed power {installed_power_kw:g} kW)",
+    }
+
+
 def brochure_review_summary() -> list[dict]:
     """For each machine model: its current (proxy) energy profile vs. what a
-    brochure derivation would replace it with. Drives the review workbench."""
+    brochure derivation would replace it with. Drives the review workbench.
+
+    Phase 4: a machine whose category has no derivation rule AND shows a
+    best-effort observation in machine_spec_extractions.csv surfaces a
+    ``next_action`` of "Author a derivation rule for {category} (see observed
+    power {x} kW)" so the unsupported backlog is visible and actionable.
+    """
+    from app.services.derivation_rules import has_category_rule
+
     master = load_master_data()
+    spec_extractions_by_model = master["machine_spec_extractions_by_model"]
     out: list[dict] = []
     for model in master["datasets"]["machine_models"]:
         model_id = model["machine_model_id"]
+        category = model.get("machine_category", "")
         current = master["machine_energy_by_model"].get(model_id, {})
+
+        # Phase 4 — find any best-effort/unsupported observation for this model.
+        unsupported_observation = None
+        for ext in spec_extractions_by_model.get(model_id, []):
+            if (ext.get("extraction_method") or "").lower().startswith("best-effort"):
+                unsupported_observation = ext
+                break
+
+        next_action = ""
+        rule_supported = has_category_rule(category)
+        if unsupported_observation and not rule_supported:
+            observed_power = unsupported_observation.get("normalized_value", "")
+            next_action = (
+                f"Author a derivation rule for {category}"
+                + (f" (see observed power {observed_power} kW)" if observed_power else "")
+            )
+        elif unsupported_observation:
+            # A best-effort row exists but the category now HAS a rule authored: prompt promotion.
+            next_action = f"Review the best-effort observation and promote via /api/brochure-promote."
+
         out.append(
             {
                 "machine_model_id": model_id,
                 "manufacturer": model["manufacturer"],
                 "model": model["model"],
-                "machine_category": model["machine_category"],
+                "machine_category": category,
                 "current_electricity": current.get("electricity", ""),
                 "current_unit": current.get("unit", ""),
                 "current_source": current.get("source", ""),
                 "current_approval": current.get("approval_status", ""),
                 "current_confidence": current.get("confidence", ""),
+                "rule_supported": rule_supported,
+                "unsupported_observation": unsupported_observation,
+                "next_action": next_action,
             }
         )
     return out
