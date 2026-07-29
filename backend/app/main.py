@@ -274,8 +274,9 @@ def brochure_fetch(
 def brochure_coverage(live: bool = False) -> dict[str, object]:
     """Honest coverage sweep over the CURRENT machine catalog.
 
-    For every machine model in ``machine_models`` (today: the 6 seed rows — the
-    52-machine recommender bridge is a deferred data-change step), report its
+    For every machine model in ``machine_models`` (the 6 seed rows + the
+    catalog-bridge MMODR rows — 52 energy-bearing machines once the bridge
+    lands; the 6 non-energy recommender categories are skipped), report its
     energy-profile state and the derivation-rule coverage, plus an aggregate
     derived-vs-proxy-vs-unsupported ratio that becomes the confidence signal for
     the whole carbon layer.

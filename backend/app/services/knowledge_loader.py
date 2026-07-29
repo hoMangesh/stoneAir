@@ -93,6 +93,15 @@ def load_master_data() -> dict[str, Any]:
     machine_energy_by_model = _index_by(datasets["machine_energy_profiles"], "machine_model_id")
     machine_brochures_by_model = _group_by(datasets["machine_brochures"], "machine_model_id")
     machine_spec_extractions_by_model = _group_by(datasets["machine_spec_extractions"], "machine_model_id")
+    # Catalog bridge (Step 4b): recommender M*** -> synthetic MMODR-*** alias.
+    # Indexed by recommender_id so a future runtime wiring can resolve a dynamic
+    # workflow's chosen machine to its bridged MMODR energy identity. Pure
+    # resolvability + visibility layer — does not feed _select_machine_records
+    # yet (separate runtime-wiring step); the route's default_machine_names join
+    # to machine_models_by_category handles carbon auto-selection today.
+    machine_recommender_bridge_by_id = _index_by(
+        datasets["machine_recommender_bridge"], "recommender_id"
+    )
     # Per-material origin provenance (material_id -> [origin rows]). Drives the
     # origin-of-processes path: a BOM component's material resolves to its known
     # production countries/regions so the farming/agro steps use the real origin
@@ -181,6 +190,7 @@ def load_master_data() -> dict[str, Any]:
         "machine_energy_by_model": machine_energy_by_model,
         "machine_brochures_by_model": machine_brochures_by_model,
         "machine_spec_extractions_by_model": machine_spec_extractions_by_model,
+        "machine_recommender_bridge_by_id": machine_recommender_bridge_by_id,
         "material_origins_by_material": material_origins_by_material,
         "countries_by_name": countries_by_name,
         "countries_by_name_ci": countries_by_name_ci,

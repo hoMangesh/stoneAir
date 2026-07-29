@@ -5,3 +5,49 @@ MMOD003,kWh/kg yarn,2.5,0,0,0.1,0,KG V2 Ring Frame proxy; brochure review requir
 MMOD004,kWh/garment,0.05,0,0,0,0,KG V2 Lockstitch Machine proxy; datasheet review required,0.1,2026-06-12,,Pending Validation,0.55
 MMOD005,kWh/kg fabric,1.2,0,10,0,0,KG V2 Stenter Machine proxy,0.1,2026-06-12,,Pending Validation,0.55
 MMOD006,kWh/kg garment,0.15,0,0,0,0,KG V2 CNC Fabric Cutter proxy,0.1,2026-06-12,,Pending Validation,0.55
+MMODR-001,kWh/kg fabric,0.30,0,75,0,0,KG V2 bridge proxy (M002); brochure review required,0.1,2026-06-12,,Pending Validation,0.55
+MMODR-002,kWh/m²,0.03,0,0,0,0,KG V2 bridge proxy (M006); brochure review required,0.1,2026-06-12,,Pending Validation,0.55
+MMODR-003,kWh/m²,0.03,0,0,0,0,KG V2 bridge proxy (M007); brochure review required,0.1,2026-06-12,,Pending Validation,0.55
+MMODR-004,kWh/kg garment,0.15,0,0,0,0,KG V2 bridge proxy (M008); brochure review required,0.1,2026-06-12,,Pending Validation,0.55
+MMODR-005,kWh/kg garment,0.15,0,0,0,0,KG V2 bridge proxy (M009); brochure review required,0.1,2026-06-12,,Pending Validation,0.55
+MMODR-006,kWh/kg garment,0.15,0,0,0,0,KG V2 bridge proxy (M010); brochure review required,0.1,2026-06-12,,Pending Validation,0.55
+MMODR-007,kWh/kg garment,0.15,0,0,0,0,KG V2 bridge proxy (M011); brochure review required,0.1,2026-06-12,,Pending Validation,0.55
+MMODR-008,kWh/kg garment,0.15,0,0,0,0,KG V2 bridge proxy (M012); brochure review required,0.1,2026-06-12,,Pending Validation,0.55
+MMODR-009,kWh/m²,0.80,0,0,0,0,KG V2 bridge proxy (M013); brochure review required,0.1,2026-06-12,,Pending Validation,0.55
+MMODR-010,kWh/m²,0.80,0,0,0,0,KG V2 bridge proxy (M014); brochure review required,0.1,2026-06-12,,Pending Validation,0.55
+MMODR-011,kWh/m²,0.80,0,0,0,0,KG V2 bridge proxy (M015); brochure review required,0.1,2026-06-12,,Pending Validation,0.55
+MMODR-012,kWh/m²,0.80,0,0,0,0,KG V2 bridge proxy (M016); brochure review required,0.1,2026-06-12,,Pending Validation,0.55
+MMODR-013,kWh/garment,0.05,0,0,0,0,KG V2 bridge proxy (M017); brochure review required,0.1,2026-06-12,,Pending Validation,0.55
+MMODR-014,kWh/garment,0.05,0,0,0,0,KG V2 bridge proxy (M018); brochure review required,0.1,2026-06-12,,Pending Validation,0.55
+MMODR-015,kWh/garment,0.05,0,0,0,0,KG V2 bridge proxy (M019); brochure review required,0.1,2026-06-12,,Pending Validation,0.55
+MMODR-016,kWh/garment,0.05,0,0,0,0,KG V2 bridge proxy (M020); brochure review required,0.1,2026-06-12,,Pending Validation,0.55
+MMODR-017,kWh/garment,0.05,0,0,0,0,KG V2 bridge proxy (M021); brochure review required,0.1,2026-06-12,,Pending Validation,0.55
+MMODR-018,kWh/garment,0.05,0,0,0,0,KG V2 bridge proxy (M022); brochure review required,0.1,2026-06-12,,Pending Validation,0.55
+MMODR-019,kWh/garment,0.05,0,0,0,0,KG V2 bridge proxy (M023); brochure review required,0.1,2026-06-12,,Pending Validation,0.55
+MMODR-020,kWh/garment,0.05,0,0,0,0,KG V2 bridge proxy (M024); brochure review required,0.1,2026-06-12,,Pending Validation,0.55
+MMODR-021,kWh/garment,0.05,0,0,0,0,KG V2 bridge proxy (M025); brochure review required,0.1,2026-06-12,,Pending Validation,0.55
+MMODR-022,kWh/garment,0.05,0,0,0,0,KG V2 bridge proxy (M026); brochure review required,0.1,2026-06-12,,Pending Validation,0.55
+MMODR-023,kWh/kg fabric,1.20,0,10,0,0,KG V2 bridge proxy (M027); brochure review required,0.1,2026-06-12,,Pending Validation,0.55
+MMODR-024,kWh/kg fabric,1.20,0,10,0,0,KG V2 bridge proxy (M028); brochure review required,0.1,2026-06-12,,Pending Validation,0.55
+MMODR-025,kWh/kg fabric,0.40,0,0,0,0,KG V2 bridge proxy (M029); brochure review required,0.1,2026-06-12,,Pending Validation,0.55
+MMODR-026,kWh/kg fabric,0.40,0,0,0,0,KG V2 bridge proxy (M030); brochure review required,0.1,2026-06-12,,Pending Validation,0.55
+MMODR-027,kWh/kg fabric,0.40,0,0,0,0,KG V2 bridge proxy (M031); brochure review required,0.1,2026-06-12,,Pending Validation,0.55
+MMODR-028,kWh/kg fabric,0.40,0,0,0,0,KG V2 bridge proxy (M032); brochure review required,0.1,2026-06-12,,Pending Validation,0.55
+MMODR-029,kWh/kg yarn,2.50,0,0,0,0,KG V2 bridge proxy (M035); brochure review required,0.1,2026-06-12,,Pending Validation,0.55
+MMODR-030,kWh/kg yarn,2.50,0,0,0,0,KG V2 bridge proxy (M036); brochure review required,0.1,2026-06-12,,Pending Validation,0.55
+MMODR-031,kWh/kg yarn,2.50,0,0,0,0,KG V2 bridge proxy (M037); brochure review required,0.1,2026-06-12,,Pending Validation,0.55
+MMODR-032,kWh/kg yarn,2.50,0,0,0,0,KG V2 bridge proxy (M038); brochure review required,0.1,2026-06-12,,Pending Validation,0.55
+MMODR-033,kWh/kg yarn,2.50,0,0,0,0,KG V2 bridge proxy (M039); brochure review required,0.1,2026-06-12,,Pending Validation,0.55
+MMODR-034,kWh/kg fabric,0.30,0,75,0,0,KG V2 bridge proxy (M040); brochure review required,0.1,2026-06-12,,Pending Validation,0.55
+MMODR-035,kWh/garment,0.05,0,0,0,0,KG V2 bridge proxy (M041); brochure review required,0.1,2026-06-12,,Pending Validation,0.55
+MMODR-036,kWh/garment,0.05,0,0,0,0,KG V2 bridge proxy (M042); brochure review required,0.1,2026-06-12,,Pending Validation,0.55
+MMODR-037,kWh/kg fabric,0.30,0,40,0,0,KG V2 bridge proxy (M043); brochure review required,0.1,2026-06-12,,Pending Validation,0.55
+MMODR-038,kWh/kg fabric,0.60,0,0,0,0,KG V2 bridge proxy (M044); brochure review required,0.1,2026-06-12,,Pending Validation,0.55
+MMODR-039,kWh/kg fabric,0.30,0,40,0,0,KG V2 bridge proxy (M045); brochure review required,0.1,2026-06-12,,Pending Validation,0.55
+MMODR-040,kWh/kg fabric,1.20,0,10,0,0,KG V2 bridge proxy (M046); brochure review required,0.1,2026-06-12,,Pending Validation,0.55
+MMODR-041,kWh/garment,0.05,0,0,0,0,KG V2 bridge proxy (M047); brochure review required,0.1,2026-06-12,,Pending Validation,0.55
+MMODR-042,kWh/garment,0.05,0,0,0,0,KG V2 bridge proxy (M048); brochure review required,0.1,2026-06-12,,Pending Validation,0.55
+MMODR-043,kWh/garment,0.05,0,0,0,0,KG V2 bridge proxy (M049); brochure review required,0.1,2026-06-12,,Pending Validation,0.55
+MMODR-044,kWh/garment,0.05,0,0,0,0,KG V2 bridge proxy (M050); brochure review required,0.1,2026-06-12,,Pending Validation,0.55
+MMODR-045,kWh/garment,0.05,0,0,0,0,KG V2 bridge proxy (M051); brochure review required,0.1,2026-06-12,,Pending Validation,0.55
+MMODR-046,kWh/garment,0.05,0,0,0,0,KG V2 bridge proxy (M052); brochure review required,0.1,2026-06-12,,Pending Validation,0.55

@@ -26,6 +26,7 @@ MASTER_DATASETS = {
     "machine_brochures": MASTER_DATA_ROOT / "machine_brochures.csv",
     "machine_spec_extractions": MASTER_DATA_ROOT / "machine_spec_extractions.csv",
     "machine_energy_profiles": MASTER_DATA_ROOT / "machine_energy_profiles.csv",
+    "machine_recommender_bridge": MASTER_DATA_ROOT / "machine_recommender_models_bridge.csv",
     "consumables": MASTER_DATA_ROOT / "consumables.csv",
     "chemicals": MASTER_DATA_ROOT / "chemicals.csv",
     "suppliers": MASTER_DATA_ROOT / "suppliers.csv",

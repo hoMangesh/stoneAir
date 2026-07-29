@@ -44,6 +44,15 @@ _CATEGORY_UNIT = {
     "Lockstitch Machine": "kWh/garment",
     "Stenter Machine": "kWh/kg fabric",
     "CNC Fabric Cutter": "kWh/kg garment",
+    # Added for the catalog bridge (Step 4b): recommender categories that map to
+    # these derivation-rule targets via _CATEGORY_ALIASES. Units match each
+    # derivation rule's own output so a derived/approved MMODR row carries an
+    # honest per-category unit instead of the generic kWh/kg fallback.
+    "Washing Machine": "kWh/kg fabric",
+    "Printing Machine": "kWh/m²",
+    "Ironing Machine": "kWh/kg fabric",
+    "Drying Machine": "kWh/kg fabric",
+    "Spreading Machine": "kWh/m²",
 }
 
 
