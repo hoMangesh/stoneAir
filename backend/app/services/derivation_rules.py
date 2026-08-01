@@ -171,8 +171,8 @@ def rule_per_garment(text: str, parse: _Parse) -> Optional[Result]:
     normalised = " ".join(text.split())
     for match in mi.THROUGHPUT_PATTERN.finditer(normalised):
         unit = match.group("unit").lower()
-        if unit.startswith(("stitches", "pcs", "rpm")):
-            rate = float(match.group("value"))
+        if unit.startswith(("stitches", "pcs", "rpm", "sti")):
+            rate = mi._num(match.group("value"))
             if rate > 0:
                 # kWh per stitch-minute-rate — a coarse per-garment proxy.
                 kwh = round(power_kw / (rate * 60.0), 6)

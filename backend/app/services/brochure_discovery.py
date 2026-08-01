@@ -725,7 +725,58 @@ def discover_energy(machine_model_id: str) -> DiscoveryResult:
         process=model.get("process") or "",
     )
     registered = _real_public_urls(machine_model_id, master)  # [(brochure_id, url), ...]
-    sources, finder_notes = find_candidate_sources(identity, registered_urls=registered,
+
+    # Phase 4 — remember the last power figure parsed during a no-derivation fetch,
+    # so a fully unsupported-category machine still queues its parseable evidence.
+    # Initialized here (before the registered fast path) so either path can seed it.
+    observed_power_for_queue: float | None = None
+    observed_basis_for_queue = ""
+
+    # Tier 0.5 — registered-URL FETCH-first path (before the search ladder).
+    # A registered machine_brochures.csv public_url is human-curated authentic
+    # evidence — the top rung of the authority ladder. Fetch it FIRST, within a
+    # small dedicated slice of the budget, and RETURN on a derivation. This keeps
+    # the flaky multi-engine search (DDG captcha + slow Bing) from burning the
+    # whole _TOTAL_TIMEOUT before the guaranteed-good source is even reached — the
+    # bug that, pre-fix, left a registered Juki catalog derive unfetched (11.6s of
+    # finder work exhausted a 12s budget, ~0s left for the one URL that mattered).
+    # On no-derivation, honest attempts are recorded FIRST (so the trace shows
+    # registered was tried) and we fall through to the finder, passing the finder
+    # registered_urls=None so it does NOT re-fetch a URL the fast path tried.
+    for brochure_id, url in registered:
+        if time.monotonic() - started >= _TOTAL_TIMEOUT:
+            break
+        remaining = max(0.5, _TOTAL_TIMEOUT - (time.monotonic() - started))
+        txt = _fetch_text(url, timeout=min(_PER_URL_TIMEOUT, remaining))
+        if not txt:
+            attempts.append(DiscoveryAttempt("Official brochure URL", "", url, "network_error", None, None, None, ""))
+            continue
+        kwh_t, power_t, thru_t, basis_t = _derive_from_text(txt, (model or {}).get("machine_category") or "")
+        if kwh_t is not None:
+            attempts.append(DiscoveryAttempt("Official brochure URL", "", url, "derived", kwh_t, power_t, thru_t, basis_t))
+            try:
+                persist_brochure_observations(
+                    machine_model_id, brochure_id=brochure_id, url=url,
+                    installed_power_kw=power_t, throughput_kg_per_h=thru_t,
+                )
+            except Exception:
+                pass
+            return DiscoveryResult(
+                machine_model_id=machine_model_id,
+                derived_kwh_per_unit=kwh_t,
+                unit=unit,
+                installed_power_kw=power_t,
+                throughput_kg_per_h=thru_t,
+                cache_hit=False,
+                attempts=attempts,
+                basis=basis_t,
+            )
+        attempts.append(DiscoveryAttempt("Official brochure URL", "", url, "official_url_no_specs", None, power_t, thru_t, basis_t))
+        if power_t and not has_category_rule((model or {}).get("machine_category") or ""):
+            observed_power_for_queue = power_t
+            observed_basis_for_queue = basis_t
+
+    sources, finder_notes = find_candidate_sources(identity, registered_urls=None,
                                                     deadline=started + _TOTAL_TIMEOUT)
 
     # Map url -> brochure_id so a derivation from a registered URL persists with its link.
@@ -740,10 +791,6 @@ def discover_energy(machine_model_id: str) -> DiscoveryResult:
     derived: float | None = None
     final_power = final_throughput = None
     basis = ""
-    # Phase 4 — remember the last power figure parsed during a no-derivation fetch,
-    # so a fully unsupported-category machine still queues its parseable evidence.
-    observed_power_for_queue: float | None = None
-    observed_basis_for_queue = ""
 
     # Discovery strategy name per source kind — keeps the legacy vocabulary
     # (registered=Official brochure URL, brand crawl=Official-site crawl) so the

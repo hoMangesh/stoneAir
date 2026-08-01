@@ -97,6 +97,44 @@ def test_sewing_alias_routes_to_per_garment():
 
 
 # ---------------------------------------------------------------------------
+# Authentic-source realism: watts + Juki's 'sti/min' abbreviation + thousands
+# comma. A real Juki apparel catalog quotes "Rated output 550W" and
+# "5,000sti/min" — the extractor must reach kW and the rate, not be defeated
+# by the W unit / the abbreviated stitch rate / the comma separator.
+# ---------------------------------------------------------------------------
+def test_per_garment_motor_quoted_in_watts_matches_kw_path():
+    # "550 W" motor must derive the SAME kWh/garment as "0.55 kW" motor.
+    w = dr.derive_for_category("Lockstitch Machine",
+                               "Juki DDL-8700. Max. sewing speed 5,000sti/min. Rated output 550W.", _Parse)
+    kw = dr.derive_for_category("Lockstitch Machine",
+                                "Juki DDL-8700. Max. sewing speed 5000 stitches/min. Rated output 0.55 kW.", _Parse)
+    assert w is not None and kw is not None
+    assert w.rule_name == "per-garment"
+    assert w.installed_power_kw == 0.55
+    assert w.kwh_per_unit == kw.kwh_per_unit == round(0.55 / (5000.0 * 60), 6)
+
+
+def test_sti_min_abbreviation_recognized_as_stitch_rate():
+    # Juki's catalog uses 'sti/min' (and a thousands comma); absent support the
+    # per-garment rule would find power but no rate -> None. With the fix -> derive.
+    r = dr.derive_for_category("Lockstitch Machine",
+                               "Rated output 550W. Max sewing speed 4,000sti/min.", _Parse)
+    assert r is not None
+    assert r.rule_name == "per-garment"
+    assert r.kwh_per_unit == round(0.55 / (4000.0 * 60), 6)
+
+
+def test_power_parse_skips_garbled_watt_fragment_keeps_real_motor():
+    # A stray '2 w' (extracted from garbled PDF table text) carries no power
+    # vocabulary, so the 550W 'rated output' motor — not the noise — is parsed.
+    # NB _parse_power lives in brochure_pipeline; the per-garment rule uses it.
+    from app.services import brochure_pipeline as bp
+    pw, raw = bp._parse_power("... s e 2 w 1 i ... Rated output 550W Main motor")
+    assert pw == 0.55
+    assert "550W" in raw
+
+
+# ---------------------------------------------------------------------------
 # feed-area (CNC Cutter / Spreading) — kW ÷ (speed × width × 3600s/hour)
 # ---------------------------------------------------------------------------
 def test_feed_area_cnc_cutter():

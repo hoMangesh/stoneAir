@@ -23,6 +23,7 @@ trace exactly why the number is what it is.
 from __future__ import annotations
 
 import csv
+import re
 from dataclasses import dataclass
 from pathlib import Path
 
@@ -82,15 +83,46 @@ def _adapter_for(machine_model_id: str, master_data: dict) -> dict:
     return models.get(machine_model_id, {})
 
 
+_POWER_CONTEXT_RE = re.compile(
+    r"(rated\s*output|connected\s*load|installed\s*power|motor|main\s*motor|"
+    r"power\s*consum(?:ption|ed)|input\s*power|drive\s*power|\bpower\b)",
+    re.IGNORECASE,
+)
+
+
+def _power_kw(value: float, unit: str) -> float:
+    if unit.startswith("kw"):
+        return value
+    if unit.startswith("hp") or unit.startswith("horse"):
+        return value * 0.7457  # hp -> kw
+    return value / 1000.0  # w / watts
+
+
 def _parse_power(text: str) -> tuple[float | None, str]:
-    """Return (kW, raw_text) for the first power figure, converting HP->kW."""
+    """Return (kW, raw_text) for the first credible power figure.
+
+    kW/kilowatt and hp/horsepower figures are publication-grade and trusted on
+    first match. A bare **watt** figure (``550 W``) is accepted ONLY when a
+    power vocabulary token (``rated output``/``motor``/``power``...) appears in
+    the ~40-char window around it — garbled PDF table fragments (e.g. a stray
+    ``2 w`` extracted from an image row) carry no power context and are skipped.
+    ``Watts`` are common for garment-machine motors (sewing ``550 W``), so this
+    is what connects the Juki catalog to the per-garment derivation rule.
+    """
     normalised = " ".join(text.split())
+    first_watt: tuple[float, str] | None = None  # fallback if no kW/hp + no context-anchored watt
     for match in mi.POWER_PATTERN.finditer(normalised):
         value = float(match.group("value"))
         unit = match.group("unit").lower()
-        kw = value if unit.startswith("kw") else value * 0.7457  # hp -> kw
-        return kw, match.group(0)
-    return None, ""
+        is_watt = not (unit.startswith("kw") or unit.startswith("hp") or unit.startswith("horse"))
+        if is_watt:
+            window = normalised[max(0, match.start() - 40): match.start() + len(match.group(0)) + 20]
+            if not _POWER_CONTEXT_RE.search(window):
+                if first_watt is None:  # remember the earliest raw watt for a last-resort fallback
+                    first_watt = (_power_kw(value, unit), match.group(0))
+                continue
+        return _power_kw(value, unit), match.group(0)
+    return (first_watt[0], first_watt[1]) if first_watt is not None else (None, "")
 
 
 def _parse_throughput_kg_per_h(text: str) -> tuple[float | None, str]:
@@ -99,7 +131,7 @@ def _parse_throughput_kg_per_h(text: str) -> tuple[float | None, str]:
     for match in mi.THROUGHPUT_PATTERN.finditer(normalised):
         unit = match.group("unit").lower()
         if unit.startswith("kg"):  # kg/h, kg/hr, kg/hour, kg per hour
-            return float(match.group("value")), match.group(0)
+            return mi._num(match.group("value")), match.group(0)
     return None, ""
 
 

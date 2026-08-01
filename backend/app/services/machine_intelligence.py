@@ -6,12 +6,17 @@ from collections import Counter
 from app.services.knowledge_loader import confidence_level, load_master_data
 
 
+# Watts included (w|watts) because garment-machine motors (e.g. a sewing
+# machine DDL-8700 "550 W") quote installed power in W, not kW. The value is
+# digit-prefixed and the unit is a full \b token, so "20 Width" never matches
+# (the W there has no trailing word boundary). Order keeps kw/kilowatt first so
+# kW figures (the derivation-grade unit) are preferred when both appear.
 POWER_PATTERN = re.compile(
-    r"(?P<value>\d+(?:\.\d+)?)\s*(?P<unit>kw|kilowatt|kilowatts|hp|horsepower)\b",
+    r"(?P<value>\d+(?:\.\d+)?)\s*(?P<unit>kw|kilowatt|kilowatts|hp|horsepower|w|watts)\b",
     re.IGNORECASE,
 )
 THROUGHPUT_PATTERN = re.compile(
-    r"(?P<value>\d+(?:\.\d+)?)\s*(?P<unit>kg/h|kg/hr|kg per hour|kg/hour|garments/hour|pcs/min|stitches/min|rpm)\b",
+    r"(?P<value>\d+(?:,\d{3})*(?:\.\d+)?)\s*(?P<unit>kg/h|kg/hr|kg per hour|kg/hour|garments/hour|pcs/min|stitches/min|sti/min|rpm)\b",
     re.IGNORECASE,
 )
 CAPACITY_PATTERN = re.compile(
@@ -51,6 +56,11 @@ AREA_THROUGHPUT_PATTERN = re.compile(
     r"(?P<value>\d+(?:\.\d+)?)\s*(?P<unit>m2/h|m2/hr|m2/hour|m²/h|m²/hour|sqm/h|sqm/hour)\b",
     re.IGNORECASE,
 )
+
+
+def _num(raw: str) -> float:
+    """Parse a numeric match-group, tolerating thousands separators (``5,000`` -> 5000)."""
+    return float(raw.replace(",", ""))
 
 
 def _first_matches(pattern: re.Pattern[str], text: str, limit: int = 6) -> list[dict[str, str]]:

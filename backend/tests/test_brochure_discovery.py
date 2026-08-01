@@ -337,6 +337,29 @@ def test_tier05_registered_brochure_url_derives():
     assert any(a.outcome == "derived" and a.url.endswith(".pdf") for a in result.attempts)
 
 
+def test_registered_fast_path_skips_search_ladder():
+    # A registered brochure URL derives -> discovery returns WITHOUT ever invoking
+    # the flaky multi-engine search (DDG/Bing). This locks the Tier-0.5 fast path:
+    # a curated authentic source must not be starved by search-host budget burn.
+    brochure_text = b"Juki DDL-8700\nRated output 550W\nMax sewing speed 5,000sti/min\n"
+    master = _fake_master_with_model(
+        "MMOD004", "Juki", "DDL-8700", "Lockstitch Machine",
+        brochures=[{"brochure_id": "MBR004",
+                    "public_url": "https://juki.com/static/version1780421580/frontend/SBI/bootstrap/en_US/images/products/juki-apparel.pdf"}],
+    )
+    with patch.object(bd, "load_master_data", return_value=master), \
+         _patch_urlopen_seq([brochure_text]), \
+         patch.object(bd, "persist_brochure_observations") as persist, \
+         patch.object(bd, "_ddg_candidates", side_effect=AssertionError("DDG must not run when a registered URL derives")) as ddg, \
+         patch.object(bd, "_candidate_urls_from_bing", side_effect=AssertionError("Bing must not run when a registered URL derives")) as bing:
+        result = bd.discover_energy("MMOD004")
+    assert result.derived_kwh_per_unit == round(0.55 / (5000.0 * 60), 6)
+    assert result.installed_power_kw == 0.55
+    assert any(a.outcome == "derived" and a.strategy == "Official brochure URL" for a in result.attempts)
+    assert ddg.call_count == 0 and bing.call_count == 0
+    assert persist.call_count == 1
+
+
 def test_tier05_official_crawl_one_hop_finds_pdf():
     # No registered URL; brand in _OFFICIAL_DOMAINS. Root has no PDF but links a
     # /products page; that page links the brochure PDF -> 1-hop crawl derives.

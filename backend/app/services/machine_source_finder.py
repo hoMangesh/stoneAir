@@ -234,8 +234,13 @@ def _dedupe_scored(sources: list[Source]) -> list[Source]:
             continue
         seen.add(key)
         out.append(s)
-    # Highest authority first; deterministic tie-break by url.
-    out.sort(key=lambda s: (s.score, s.url), reverse=True)
+    # Highest authority first. A registered brochure URL (machine_brochures.csv
+    # public_url) is human-curated authentic evidence, so at equal score it
+    # outranks an official-crawl hit, which outranks a search hit — the curated
+    # source is fetched within the discovery budget BEFORE flaky-search work can
+    # starve it. Deterministic tie-break by url after kind.
+    _KIND_RANK = {"registered": 2, "official_crawl": 1, "search": 0}
+    out.sort(key=lambda s: (s.score, _KIND_RANK.get(s.kind, 0), s.url), reverse=True)
     return out
 
 
