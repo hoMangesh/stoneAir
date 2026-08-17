@@ -41,11 +41,35 @@ def _score_taxonomy_row(row: dict[str, str], signals: DocumentSignals) -> float:
     return score
 
 
-def classify_product(signals: DocumentSignals) -> dict[str, object]:
+def classify_product(signals: DocumentSignals, *, domain: str | None = None) -> dict[str, object]:
     kg = load_knowledge_graph()
+    # Multi-domain: restrict candidates to TAXONOMY rows whose ``level_1_domain``
+    # matches the resolved domain's id (case-insensitive — taxonomy is Title-Case
+    # "Apparel", the pack's domain_id is lowercase "apparel"). This finally USES
+    # the multi-domain schema the data has carried since V1. Today only apparel
+    # rows match the apparel pack, so the chosen best row is identical to the
+    # unfiltered behaviour (parity preserved). When an EV-battery taxonomy lands
+    # under level_1_domain="EV Battery" with an ev_battery pack, the engine never
+    # discusses apparel — it never sees cross-domain rows.
+    if domain is None:
+        from app.core.domain_registry import resolve
+        from domain_packs.bootstrap import bootstrap
+
+        bootstrap()
+        resolved_domain = resolve(None).domain_id
+    else:
+        resolved_domain = domain.strip().lower()
+    domain_taxonomy = [
+        row for row in kg["taxonomy"]
+        if (row.get("level_1_domain") or "").strip().lower() == resolved_domain
+    ]
+    # If filtering yields nothing (e.g. no taxonomy authored for this domain yet),
+    # fall back to the full set rather than crashing — surfaced in the result so a
+    # caller can see unpierced coverage. This never engages for apparel today.
+    searched = domain_taxonomy or kg["taxonomy"]
     scored = [
         (row, _score_taxonomy_row(row, signals))
-        for row in kg["taxonomy"]
+        for row in searched
     ]
     scored.sort(key=lambda item: item[1], reverse=True)
     best_row, raw_score = scored[0]

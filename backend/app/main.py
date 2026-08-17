@@ -36,9 +36,9 @@ from app.services.source_tier import (
 )
 
 app = FastAPI(
-    title="Sustainable Fashion Carbon Intelligence API",
+    title="Manufacturing Intelligence API",
     version="0.1.0",
-    description="KG-backed product, route, machine, resource, emission, and reporting intelligence for apparel and footwear LCA.",
+    description="Domain-agnostic LCA + carbon-intelligence engine. Per-domain knowledge (apparel, EV battery, …) is supplied by registered domain packs; this API dispatches to the requested domain's pack. POST /api/analyze with a `domain` field to select the industry.",
 )
 
 app.add_middleware(
@@ -436,8 +436,30 @@ async def analyze_product(
     bom: str = Form(default=""),
     origin: str = Form(default=""),
     enrich_machines: bool = Form(default=False),
+    domain: str = Form(default=""),
     files: list[UploadFile] = File(default=[]),
 ) -> dict[str, object]:
+    # Validate / resolve the domain up front. A *named-but-unknown* domain raises
+    # explicitly (never a silent apparel fallback — that would fabricate an apparel
+    # LCA for a battery). Empty/absent domain resolves to the apparel default so
+    # existing call sites keep their behaviour (parity).
+    from app.core.domain_registry import known, resolve, UnknownDomainError
+    from domain_packs.bootstrap import bootstrap
+
+    bootstrap()
+    if domain and domain.strip():
+        try:
+            resolved_pack = resolve(domain)
+        except UnknownDomainError as exc:
+            from fastapi import HTTPException
+            raise HTTPException(
+                status_code=400,
+                detail=f"unknown domain: {domain!r}; known: {known()}",
+            ) from exc
+        domain_id = resolved_pack.domain_id
+    else:
+        domain_id = resolve(None).domain_id
+
     # Structured BOM (materials + weight + origin) is the primary accurate path.
     # It is supplied as a JSON string so multipart forms stay simple. Missing or
     # malformed BOM degrades gracefully to the free-text description fallback.
@@ -461,7 +483,7 @@ async def analyze_product(
         bom_components=bom_components,
         declared_origin=origin or None,
     )
-    classification = classify_product(signals)
+    classification = classify_product(signals, domain=domain_id)
     taxonomy = classification["taxonomy"]
     template_match = match_template(str(taxonomy["taxonomy_id"]), signals)
     template = template_match["template"]
