@@ -21,6 +21,7 @@ core — core and pack hold the same values until each relocate lands).
 
 from __future__ import annotations
 
+import re
 from pathlib import Path
 
 from app.core.contracts import DomainPack, KnowledgeRepoPaths, RegexPatterns
@@ -135,14 +136,98 @@ DEFAULT_EXPORT_MODE: str = "Ocean Freight"
 ORIGIN_SENSITIVE_PROCESS_GROUPS: set[str] = {"Fiber Production", "Fiber Preparation"}
 
 
+# ---------------------------------------------------------------------------
+# 2.3 — Ingestion vocabulary (was document_intelligence module constants).
+# Material aliases normalise free-text/regex material tokens to the canonical
+# names used in materials.csv; the keyword bank drives product-type detection
+# from prose. Both are apparel-specific (a battery pack would carry cathode/
+# anode/electrolyte aliases and "cylindrical/prismatic/pouch" keywords instead).
+# ---------------------------------------------------------------------------
+
+MATERIAL_ALIASES: dict[str, str] = {
+    "organic cotton": "organic cotton",
+    "recycled cotton": "recycled cotton",
+    "recycled polyester": "recycled polyester",
+    "cotton": "cotton",
+    "polyester": "polyester",
+    "elastane": "elastane",
+    "spandex": "elastane",
+    "viscose": "viscose",
+    "rayon": "viscose",
+    "modal": "modal",
+    "lyocell": "lyocell",
+    "tencel": "lyocell",
+    "hemp": "hemp",
+    "linen": "linen",
+    "nylon": "nylon",
+    "polyamide": "nylon",
+    "wool": "wool",
+    "silk": "silk",
+    "leather": "leather",
+    "eva": "eva",
+    "rubber": "rubber",
+}
+
+# Keyword bank for product-type detection from prose (was _detect_keywords in
+# document_intelligence). Each token is matched lowercase against the input.
+KEYWORD_BANK: list[str] = [
+    "t-shirt", "tee", "polo", "hoodie", "sweatshirt", "legging", "short",
+    "shirt", "jeans", "denim", "chino", "dress", "jacket", "sock",
+    "sports bra", "sneaker", "running shoe", "sandal", "boot", "cotton",
+    "polyester", "recycled polyester", "elastane", "viscose", "woven", "knit",
+    "fleece", "pique", "shell",
+]
+
+
+# The blend-pattern material alternation is a hand-curated apparel subset of the
+# alias values — NOT all of them. It notably includes the spelling "spandex"
+# (which aliases to "elastane" upstream) and excludes eva/linen/rubber. Relocated
+# verbatim from the original core constant to preserve exact match behaviour; the
+# order is longest-first so "organic cotton" wins over "cotton" at one position.
+_BLEND_MATERIALS = [
+    "organic cotton",
+    "recycled cotton",
+    "recycled polyester",
+    "cotton",
+    "polyester",
+    "elastane",
+    "spandex",
+    "viscose",
+    "modal",
+    "lyocell",
+    "hemp",
+    "nylon",
+    "wool",
+    "silk",
+    "leather",
+]
+
+
+def _build_regex_patterns() -> RegexPatterns:
+    """Compile the apparel regex patterns (verbatim from the original core
+    constants, longest-first order preserved for blend precedence).
+
+    The blend material alternation is NOT "all alias values" — see
+    :data:`_BLEND_MATERIALS` for why (a curated subset incl. the "spandex"
+    spelling). Apparel GSM (g/m²) and weight-token patterns follow verbatim.
+    """
+    blend = re.compile(
+        rf"(?P<percent>\d{{1,3}})\s*%?\s*(?P<material>{'|'.join(_BLEND_MATERIALS)})",
+        re.IGNORECASE,
+    )
+    mass_unit = re.compile(r"(?P<gsm>\d{2,3})\s*(?:gsm|g/m2|g\/m2)", re.IGNORECASE)
+    weight = re.compile(r"(?P<weight>\d{2,5})\s*(?:g|gram|grams|kg)\b", re.IGNORECASE)
+    return RegexPatterns(blend=blend, mass_unit=mass_unit, weight=weight)
+
+
 def build_pack(*, carbon_model=None) -> DomainPack:
     """Build the apparel DomainPack. ``carbon_model`` is supplied in Step 3."""
     return DomainPack(
         domain_id="apparel",
         display_name="Clothing & Apparel",
-        material_aliases={},                           # wired in Step 2.3
-        regex_patterns=RegexPatterns(None, None, None),  # wired in Step 2.3
-        keyword_bank=[],                              # wired in Step 2.3
+        material_aliases=MATERIAL_ALIASES,            # ← Step 2.3 (done)
+        regex_patterns=_build_regex_patterns(),      # ← Step 2.3 (done)
+        keyword_bank=KEYWORD_BANK,                   # ← Step 2.3 (done)
         origin_sensitive_process_groups=ORIGIN_SENSITIVE_PROCESS_GROUPS,  # ← Step 2.4 (done)
         transport_mode_hints=TRANSPORT_MODE_HINTS,    # ← Step 2.2 (done)
         default_export_distance_km=DEFAULT_EXPORT_DISTANCE_KM,  # ← Step 2.2 (done)
@@ -162,5 +247,7 @@ __all__ = [
     "DEFAULT_EXPORT_DISTANCE_KM",
     "DEFAULT_EXPORT_MODE",
     "ORIGIN_SENSITIVE_PROCESS_GROUPS",
+    "MATERIAL_ALIASES",
+    "KEYWORD_BANK",
     "build_pack",
 ]

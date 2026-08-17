@@ -4,6 +4,7 @@ import csv
 import io
 import re
 from dataclasses import dataclass, field
+from functools import lru_cache
 from pathlib import Path
 from typing import Iterable
 
@@ -14,37 +15,23 @@ from typing import Iterable
 # description remains a fallback that fills gaps the BOM does not provide.
 # Fields set explicitly via the BOM win over regex guesses from prose.
 
+# The ingestion vocabulary (material aliases, regex patterns, keyword bank) is
+# apparel-specific and now lives in the resolved domain pack — this core module
+# holds no industry values. _pack() lazily resolves the apparel pack once per
+# process; the registry + bootstrap guarantee the pack is registered before the
+# first signal extraction (knowledge_loader.load_master_data and tests/conftest
+# both trigger bootstrap).
 
-MATERIAL_ALIASES = {
-    "organic cotton": "organic cotton",
-    "recycled cotton": "recycled cotton",
-    "recycled polyester": "recycled polyester",
-    "cotton": "cotton",
-    "polyester": "polyester",
-    "elastane": "elastane",
-    "spandex": "elastane",
-    "viscose": "viscose",
-    "rayon": "viscose",
-    "modal": "modal",
-    "lyocell": "lyocell",
-    "tencel": "lyocell",
-    "hemp": "hemp",
-    "linen": "linen",
-    "nylon": "nylon",
-    "polyamide": "nylon",
-    "wool": "wool",
-    "silk": "silk",
-    "leather": "leather",
-    "eva": "eva",
-    "rubber": "rubber",
-}
 
-BLEND_PATTERN = re.compile(
-    r"(?P<percent>\d{1,3})\s*%?\s*(?P<material>organic cotton|recycled cotton|recycled polyester|cotton|polyester|elastane|spandex|viscose|modal|lyocell|hemp|nylon|wool|silk|leather)",
-    re.IGNORECASE,
-)
-GSM_PATTERN = re.compile(r"(?P<gsm>\d{2,3})\s*(?:gsm|g/m2|g\/m2)", re.IGNORECASE)
-WEIGHT_PATTERN = re.compile(r"(?P<weight>\d{2,5})\s*(?:g|gram|grams|kg)\b", re.IGNORECASE)
+@lru_cache(maxsize=1)
+def _pack():
+    """Resolve the apparel domain pack for ingestion vocabulary (cached)."""
+    from domain_packs.bootstrap import bootstrap
+
+    bootstrap()
+    from app.core.domain_registry import resolve
+
+    return resolve(None)
 
 
 @dataclass(frozen=True)
@@ -83,50 +70,22 @@ class DocumentSignals:
 # ---------------------------------------------------------------------------
 
 def _detect_keywords(text: str) -> list[str]:
-    keyword_bank = [
-        "t-shirt",
-        "tee",
-        "polo",
-        "hoodie",
-        "sweatshirt",
-        "legging",
-        "short",
-        "shirt",
-        "jeans",
-        "denim",
-        "chino",
-        "dress",
-        "jacket",
-        "sock",
-        "sports bra",
-        "sneaker",
-        "running shoe",
-        "sandal",
-        "boot",
-        "cotton",
-        "polyester",
-        "recycled polyester",
-        "elastane",
-        "viscose",
-        "woven",
-        "knit",
-        "fleece",
-        "pique",
-        "shell",
-    ]
+    # Keyword bank is apparel-specific (product-type tokens) and now lives in the
+    # resolved domain pack; this core function holds no industry vocabulary.
+    keyword_bank = _pack().keyword_bank
     lowered = text.lower()
     return [keyword for keyword in keyword_bank if keyword in lowered]
 
 
 def _normalize_material(raw: str) -> str:
     lowered = raw.strip().lower()
-    return MATERIAL_ALIASES.get(lowered, lowered)
+    return _pack().material_aliases.get(lowered, lowered)
 
 
 def _parse_blend_from_text(text: str) -> list[dict[str, str | int]]:
     return [
         {"material": _normalize_material(match.group("material")), "percent": int(match.group("percent"))}
-        for match in BLEND_PATTERN.finditer(text)
+        for match in _pack().regex_patterns.blend.finditer(text)
     ]
 
 
@@ -327,7 +286,8 @@ def extract_document_signals(
     declared_origin = (declared_origin or "").strip().lower() or None
 
     # Weight: BOM component weights > BOM-declared nothing > regex on prose.
-    text_weight = int(WEIGHT_PATTERN.search(source_text).group("weight")) if WEIGHT_PATTERN.search(source_text) else None
+    weight_pattern = _pack().regex_patterns.weight
+    text_weight = int(weight_pattern.search(source_text).group("weight")) if weight_pattern.search(source_text) else None
     bom_weight = _total_weight_g(bom)
     weight_g: int | None = None
     weight_source = "description"
@@ -348,7 +308,7 @@ def extract_document_signals(
         blend_source = "description"
 
     # GSM only flows from prose today (BOM rarely states fabric weight per area).
-    gsm_match = GSM_PATTERN.search(source_text)
+    gsm_match = _pack().regex_patterns.mass_unit.search(source_text)
     gsm = int(gsm_match.group("gsm")) if gsm_match else None
 
     keywords = _detect_keywords(source_text)
