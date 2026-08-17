@@ -1,0 +1,1108 @@
+{
+  "cotton_tee_single": {
+    "activity_count": 23,
+    "activity_totals": {
+      "Chemical|kg": 0.0347,
+      "Electricity|kWh": 1.2478,
+      "Transport|ton-km": 0.00201
+    },
+    "impact": {
+      "carbon_kgco2e": 1.284,
+      "chemical_carbon_kgco2e": 0.035,
+      "energy_kwh": 1.959,
+      "transport_carbon_kgco2e": 0.002,
+      "water_l": 2712.479
+    },
+    "machine_breakdown": [
+      {
+        "brochure_url": "TBD_PUBLIC_BROCHURE_REQUIRED",
+        "confidence": {
+          "label": "Level 4 - Industry Average",
+          "percent": 50.0,
+          "score": 0.5
+        },
+        "datasheet_url": "TBD_PUBLIC_DATASHEET_REQUIRED",
+        "electricity_kwh": 0.6652,
+        "electricity_rate": 2.5,
+        "machine_category": "Ring Frame",
+        "machine_model": "Rieter G 38",
+        "machine_model_id": "MMOD003",
+        "process_name": "Ring Spinning",
+        "source": "KG V2 Ring Frame proxy; brochure review required",
+        "source_tier": "proxy",
+        "step_order": 3,
+        "unit": "kWh/kg yarn",
+        "water_l": 0.0
+      },
+      {
+        "brochure_url": "TBD_PUBLIC_BROCHURE_REQUIRED",
+        "confidence": {
+          "label": "Level 4 - Industry Average",
+          "percent": 50.0,
+          "score": 0.5
+        },
+        "datasheet_url": "TBD_PUBLIC_DATASHEET_REQUIRED",
+        "electricity_kwh": 0.479,
+        "electricity_rate": 1.8,
+        "machine_category": "Circular Knitting Machine",
+        "machine_model": "Mayer & Cie Relanit",
+        "machine_model_id": "MMOD002",
+        "process_name": "Knitting",
+        "source": "KG V2 Circular Knitting Machine proxy; brochure review required",
+        "source_tier": "proxy",
+        "step_order": 4,
+        "unit": "kWh/kg fabric",
+        "water_l": 0.0
+      },
+      {
+        "brochure_url": "TBD_PUBLIC_BROCHURE_REQUIRED",
+        "confidence": {
+          "label": "Level 5 - Fallback Logic",
+          "percent": 30.0,
+          "score": 0.3
+        },
+        "datasheet_url": "TBD_PUBLIC_DATASHEET_REQUIRED",
+        "electricity_kwh": 0.0387,
+        "electricity_rate": 0.15,
+        "machine_category": "Jet Dyeing Machine",
+        "machine_model": "Thies iMaster H2O",
+        "machine_model_id": "MMOD001",
+        "process_name": "Reactive Dyeing",
+        "source": "Demo seed (18kW/120kg/h) \u2014 NOT authentic; pending real Thies iMaster H2O brochure",
+        "source_tier": "demo-seed",
+        "step_order": 6,
+        "unit": "kWh/kg fabric",
+        "water_l": 19.36
+      },
+      {
+        "brochure_url": "",
+        "confidence": {
+          "label": "Level 4 - Industry Average",
+          "percent": 50.0,
+          "score": 0.5
+        },
+        "datasheet_url": "TBD_PUBLIC_DATASHEET_REQUIRED",
+        "electricity_kwh": 0.3097,
+        "electricity_rate": 1.2,
+        "machine_category": "Stenter Machine",
+        "machine_model": "Generic Stenter Range",
+        "machine_model_id": "MMOD005",
+        "process_name": "Finishing",
+        "source": "KG V2 Stenter Machine proxy",
+        "source_tier": "proxy",
+        "step_order": 7,
+        "unit": "kWh/kg fabric",
+        "water_l": 2.58
+      },
+      {
+        "brochure_url": "",
+        "confidence": {
+          "label": "Level 4 - Industry Average",
+          "percent": 50.0,
+          "score": 0.5
+        },
+        "datasheet_url": "TBD_PUBLIC_DATASHEET_REQUIRED",
+        "electricity_kwh": 0.0387,
+        "electricity_rate": 0.15,
+        "machine_category": "CNC Fabric Cutter",
+        "machine_model": "Generic CNC Fabric Cutter",
+        "machine_model_id": "MMOD006",
+        "process_name": "Cutting",
+        "source": "KG V2 CNC Fabric Cutter proxy",
+        "source_tier": "proxy",
+        "step_order": 8,
+        "unit": "kWh/kg garment",
+        "water_l": 0.0
+      },
+      {
+        "brochure_url": "TBD_PUBLIC_BROCHURE_REQUIRED",
+        "confidence": {
+          "label": "Level 4 - Industry Average",
+          "percent": 50.0,
+          "score": 0.5
+        },
+        "datasheet_url": "TBD_PUBLIC_DATASHEET_REQUIRED",
+        "electricity_kwh": 0.05,
+        "electricity_rate": 0.05,
+        "machine_category": "Lockstitch Machine",
+        "machine_model": "Juki DDL-8700",
+        "machine_model_id": "MMOD004",
+        "process_name": "Sewing",
+        "source": "KG V2 Lockstitch Machine proxy; datasheet review required",
+        "source_tier": "proxy",
+        "step_order": 9,
+        "unit": "kWh/garment",
+        "water_l": 0.0
+      }
+    ],
+    "process_breakdown": [
+      {
+        "carbon_kgco2e": 0.227,
+        "confidence": {
+          "label": "Level 2 - Supplier Data",
+          "percent": 92.0,
+          "score": 0.92
+        },
+        "country": "India",
+        "energy_kwh": 0.319,
+        "machine_models": [],
+        "machines": "Tractor|Irrigation Pump",
+        "material_mass_kg": 0.2661,
+        "process_group": "Fiber Production",
+        "process_id": "PROC001",
+        "process_name": "Cotton Farming",
+        "process_steps": [],
+        "source_status": "KG-backed",
+        "step_order": 1,
+        "water_l": 2660.86
+      },
+      {
+        "carbon_kgco2e": 0.034,
+        "confidence": {
+          "label": "Level 2 - Supplier Data",
+          "percent": 92.0,
+          "score": 0.92
+        },
+        "country": "India",
+        "energy_kwh": 0.048,
+        "machine_models": [],
+        "machines": "Cotton Gin|Bale Press",
+        "material_mass_kg": 0.2661,
+        "process_group": "Fiber Preparation",
+        "process_id": "PROC002",
+        "process_name": "Ginning",
+        "process_steps": [],
+        "source_status": "KG-backed",
+        "step_order": 2,
+        "water_l": 0.0
+      },
+      {
+        "carbon_kgco2e": 0.4128,
+        "confidence": {
+          "label": "Level 2 - Supplier Data",
+          "percent": 90.0,
+          "score": 0.9
+        },
+        "country": "Bangladesh",
+        "energy_kwh": 0.665,
+        "machine_models": [
+          "Rieter G 38"
+        ],
+        "machines": "Blow Room Machine|Carding Machine|Draw Frame|Ring Frame|Cone Winder",
+        "material_mass_kg": 0.2661,
+        "process_group": "Yarn Production",
+        "process_id": "PROC003",
+        "process_name": "Ring Spinning",
+        "process_steps": [],
+        "source_status": "KG-backed",
+        "step_order": 3,
+        "water_l": 0.0
+      },
+      {
+        "carbon_kgco2e": 0.2973,
+        "confidence": {
+          "label": "Level 2 - Supplier Data",
+          "percent": 90.0,
+          "score": 0.9
+        },
+        "country": "Bangladesh",
+        "energy_kwh": 0.479,
+        "machine_models": [
+          "Mayer & Cie Relanit"
+        ],
+        "machines": "Circular Knitting Machine",
+        "material_mass_kg": 0.2661,
+        "process_group": "Fabric Production",
+        "process_id": "PROC004",
+        "process_name": "Knitting",
+        "process_steps": [],
+        "source_status": "KG-backed",
+        "step_order": 4,
+        "water_l": 0.0
+      },
+      {
+        "carbon_kgco2e": 0.0076,
+        "confidence": {
+          "label": "Level 2 - Supplier Data",
+          "percent": 88.0,
+          "score": 0.88
+        },
+        "country": "Bangladesh",
+        "energy_kwh": 0.0,
+        "machine_models": [],
+        "machines": "Pretreatment range",
+        "material_mass_kg": 0.2581,
+        "process_group": "Wet Processing",
+        "process_id": "PROC005",
+        "process_name": "Pretreatment",
+        "process_steps": [],
+        "source_status": "KG-backed",
+        "step_order": 5,
+        "water_l": 7.74
+      },
+      {
+        "carbon_kgco2e": 0.0452,
+        "confidence": {
+          "label": "Level 2 - Supplier Data",
+          "percent": 88.0,
+          "score": 0.88
+        },
+        "country": "Bangladesh",
+        "energy_kwh": 0.039,
+        "machine_models": [
+          "Thies iMaster H2O"
+        ],
+        "machines": "Jet Dyeing Machine|Winch Dyeing Machine",
+        "material_mass_kg": 0.2581,
+        "process_group": "Wet Processing",
+        "process_id": "PROC006",
+        "process_name": "Reactive Dyeing",
+        "process_steps": [
+          {
+            "sequence": 1,
+            "step_name": "Load Fabric"
+          },
+          {
+            "sequence": 2,
+            "step_name": "Heat Bath"
+          },
+          {
+            "sequence": 3,
+            "step_name": "Add Dye"
+          },
+          {
+            "sequence": 4,
+            "step_name": "Fixation"
+          },
+          {
+            "sequence": 5,
+            "step_name": "Wash"
+          },
+          {
+            "sequence": 6,
+            "step_name": "Dry"
+          }
+        ],
+        "source_status": "KG-backed",
+        "step_order": 6,
+        "water_l": 38.72
+      },
+      {
+        "carbon_kgco2e": 0.1985,
+        "confidence": {
+          "label": "Level 2 - Supplier Data",
+          "percent": 86.0,
+          "score": 0.86
+        },
+        "country": "Bangladesh",
+        "energy_kwh": 0.31,
+        "machine_models": [
+          "Generic Stenter Range"
+        ],
+        "machines": "Stenter Machine|Compactor Machine",
+        "material_mass_kg": 0.2581,
+        "process_group": "Wet Processing",
+        "process_id": "PROC007",
+        "process_name": "Finishing",
+        "process_steps": [],
+        "source_status": "KG-backed",
+        "step_order": 7,
+        "water_l": 5.16
+      },
+      {
+        "carbon_kgco2e": 0.024,
+        "confidence": {
+          "label": "Level 2 - Supplier Data",
+          "percent": 90.0,
+          "score": 0.9
+        },
+        "country": "Bangladesh",
+        "energy_kwh": 0.039,
+        "machine_models": [
+          "Generic CNC Fabric Cutter"
+        ],
+        "machines": "Fabric Spreading Machine|CNC Fabric Cutter",
+        "material_mass_kg": 0.2581,
+        "process_group": "Garment Manufacturing",
+        "process_id": "PROC008",
+        "process_name": "Cutting",
+        "process_steps": [],
+        "source_status": "KG-backed",
+        "step_order": 8,
+        "water_l": 0.0
+      },
+      {
+        "carbon_kgco2e": 0.0313,
+        "confidence": {
+          "label": "Level 2 - Supplier Data",
+          "percent": 90.0,
+          "score": 0.9
+        },
+        "country": "Bangladesh",
+        "energy_kwh": 0.05,
+        "machine_models": [
+          "Juki DDL-8700"
+        ],
+        "machines": "Lockstitch Machine|Overlock Machine|Button Machine",
+        "material_mass_kg": 0.2194,
+        "process_group": "Garment Manufacturing",
+        "process_id": "PROC009",
+        "process_name": "Sewing",
+        "process_steps": [
+          {
+            "sequence": 1,
+            "step_name": "Panel Assembly"
+          },
+          {
+            "sequence": 2,
+            "step_name": "Trim Attachment"
+          },
+          {
+            "sequence": 3,
+            "step_name": "Final Stitch Inspection"
+          }
+        ],
+        "source_status": "KG-backed",
+        "step_order": 9,
+        "water_l": 0.0
+      },
+      {
+        "carbon_kgco2e": 0.0067,
+        "confidence": {
+          "label": "Level 2 - Supplier Data",
+          "percent": 90.0,
+          "score": 0.9
+        },
+        "country": "Bangladesh",
+        "energy_kwh": 0.011,
+        "machine_models": [],
+        "machines": "Packing Conveyor",
+        "material_mass_kg": 0.215,
+        "process_group": "Garment Manufacturing",
+        "process_id": "PROC010",
+        "process_name": "Packaging",
+        "process_steps": [],
+        "source_status": "KG-backed",
+        "step_order": 10,
+        "water_l": 0.0
+      }
+    ],
+    "resolved_weight_g": 215,
+    "route_id": "ROUTE-APP-KNT-COTTON-001",
+    "taxonomy_id": "TAX-APP-KNT-TSH-001",
+    "template_id": "TPL-APP-KNT-TSH-001",
+    "totals": {
+      "carbon_kgco2e": 1.284,
+      "chemical_carbon_kgco2e": 0.035,
+      "energy_kwh": 1.959,
+      "transport_carbon_kgco2e": 0.002,
+      "water_l": 2712.479
+    }
+  },
+  "denim_jeans": {
+    "activity_count": 17,
+    "activity_totals": {
+      "Chemical|kg": 0.037,
+      "Electricity|kWh": 2.9706,
+      "Transport|ton-km": 0.00652
+    },
+    "impact": {
+      "carbon_kgco2e": 3.014,
+      "chemical_carbon_kgco2e": 0.037,
+      "energy_kwh": 4.616,
+      "transport_carbon_kgco2e": 0.007,
+      "water_l": 8842.959
+    },
+    "machine_breakdown": [
+      {
+        "brochure_url": "TBD_PUBLIC_BROCHURE_REQUIRED",
+        "confidence": {
+          "label": "Level 4 - Industry Average",
+          "percent": 50.0,
+          "score": 0.5
+        },
+        "datasheet_url": "TBD_PUBLIC_DATASHEET_REQUIRED",
+        "electricity_kwh": 2.1884,
+        "electricity_rate": 2.5,
+        "machine_category": "Ring Frame",
+        "machine_model": "Rieter G 38",
+        "machine_model_id": "MMOD003",
+        "process_name": "Ring Spinning",
+        "source": "KG V2 Ring Frame proxy; brochure review required",
+        "source_tier": "proxy",
+        "step_order": 3,
+        "unit": "kWh/kg yarn",
+        "water_l": 0.0
+      },
+      {
+        "brochure_url": "",
+        "confidence": {
+          "label": "Level 4 - Industry Average",
+          "percent": 50.0,
+          "score": 0.5
+        },
+        "datasheet_url": "TBD_PUBLIC_DATASHEET_REQUIRED",
+        "electricity_kwh": 1.0084,
+        "electricity_rate": 1.2,
+        "machine_category": "Stenter Machine",
+        "machine_model": "Generic Stenter Range",
+        "machine_model_id": "MMOD005",
+        "process_name": "Finishing",
+        "source": "KG V2 Stenter Machine proxy",
+        "source_tier": "proxy",
+        "step_order": 7,
+        "unit": "kWh/kg fabric",
+        "water_l": 8.4
+      },
+      {
+        "brochure_url": "",
+        "confidence": {
+          "label": "Level 4 - Industry Average",
+          "percent": 50.0,
+          "score": 0.5
+        },
+        "datasheet_url": "TBD_PUBLIC_DATASHEET_REQUIRED",
+        "electricity_kwh": 0.1261,
+        "electricity_rate": 0.15,
+        "machine_category": "CNC Fabric Cutter",
+        "machine_model": "Generic CNC Fabric Cutter",
+        "machine_model_id": "MMOD006",
+        "process_name": "Cutting",
+        "source": "KG V2 CNC Fabric Cutter proxy",
+        "source_tier": "proxy",
+        "step_order": 8,
+        "unit": "kWh/kg garment",
+        "water_l": 0.0
+      },
+      {
+        "brochure_url": "TBD_PUBLIC_BROCHURE_REQUIRED",
+        "confidence": {
+          "label": "Level 4 - Industry Average",
+          "percent": 50.0,
+          "score": 0.5
+        },
+        "datasheet_url": "TBD_PUBLIC_DATASHEET_REQUIRED",
+        "electricity_kwh": 0.05,
+        "electricity_rate": 0.05,
+        "machine_category": "Lockstitch Machine",
+        "machine_model": "Juki DDL-8700",
+        "machine_model_id": "MMOD004",
+        "process_name": "Sewing",
+        "source": "KG V2 Lockstitch Machine proxy; datasheet review required",
+        "source_tier": "proxy",
+        "step_order": 9,
+        "unit": "kWh/garment",
+        "water_l": 0.0
+      }
+    ],
+    "process_breakdown": [
+      {
+        "carbon_kgco2e": 0.7468,
+        "confidence": {
+          "label": "Level 3 - Trade Data",
+          "percent": 72.0,
+          "score": 0.72
+        },
+        "country": "India",
+        "energy_kwh": 1.05,
+        "machine_models": [],
+        "machines": "Tractor|Irrigation Pump",
+        "material_mass_kg": 0.8754,
+        "process_group": "Fiber Production",
+        "process_id": "PROC001",
+        "process_name": "Cotton Farming",
+        "process_steps": [],
+        "source_status": "KG-backed",
+        "step_order": 1,
+        "water_l": 8753.5
+      },
+      {
+        "carbon_kgco2e": 0.112,
+        "confidence": {
+          "label": "Level 3 - Trade Data",
+          "percent": 72.0,
+          "score": 0.72
+        },
+        "country": "India",
+        "energy_kwh": 0.158,
+        "machine_models": [],
+        "machines": "Cotton Gin|Bale Press",
+        "material_mass_kg": 0.8754,
+        "process_group": "Fiber Preparation",
+        "process_id": "PROC002",
+        "process_name": "Ginning",
+        "process_steps": [],
+        "source_status": "KG-backed",
+        "step_order": 2,
+        "water_l": 0.0
+      },
+      {
+        "carbon_kgco2e": 1.3578,
+        "confidence": {
+          "label": "Level 3 - Trade Data",
+          "percent": 72.0,
+          "score": 0.72
+        },
+        "country": "Bangladesh",
+        "energy_kwh": 2.188,
+        "machine_models": [
+          "Rieter G 38"
+        ],
+        "machines": "Blow Room Machine|Carding Machine|Ring Frame|Cone Winder",
+        "material_mass_kg": 0.8754,
+        "process_group": "Yarn Production",
+        "process_id": "PROC003",
+        "process_name": "Ring Spinning",
+        "process_steps": [],
+        "source_status": "KG-backed",
+        "step_order": 3,
+        "water_l": 0.0
+      },
+      {
+        "carbon_kgco2e": 0.0,
+        "confidence": {
+          "label": "Level 4 - Industry Average",
+          "percent": 52.0,
+          "score": 0.52
+        },
+        "country": "Bangladesh",
+        "energy_kwh": 0.0,
+        "machine_models": [],
+        "machines": "Indigo dye range",
+        "material_mass_kg": 0.8754,
+        "process_group": "Wet Processing",
+        "process_id": "PROC-EXT-301",
+        "process_name": "Indigo Yarn Dyeing",
+        "process_steps": [],
+        "source_status": "V1 inferred",
+        "step_order": 4,
+        "water_l": 65.65
+      },
+      {
+        "carbon_kgco2e": 0.0,
+        "confidence": {
+          "label": "Level 4 - Industry Average",
+          "percent": 52.0,
+          "score": 0.52
+        },
+        "country": "Bangladesh",
+        "energy_kwh": 0.0,
+        "machine_models": [],
+        "machines": "Warping machine|Sizing range",
+        "material_mass_kg": 0.8754,
+        "process_group": "Yarn Preparation",
+        "process_id": "PROC-EXT-201",
+        "process_name": "Warping and Sizing",
+        "process_steps": [],
+        "source_status": "V1 inferred",
+        "step_order": 5,
+        "water_l": 0.0
+      },
+      {
+        "carbon_kgco2e": 0.001,
+        "confidence": {
+          "label": "Level 4 - Industry Average",
+          "percent": 52.0,
+          "score": 0.52
+        },
+        "country": "Bangladesh",
+        "energy_kwh": 0.0,
+        "machine_models": [],
+        "machines": "Rapier loom|Air jet loom",
+        "material_mass_kg": 0.8754,
+        "process_group": "Fabric Production",
+        "process_id": "PROC-EXT-202",
+        "process_name": "Weaving",
+        "process_steps": [],
+        "source_status": "V1 inferred",
+        "step_order": 6,
+        "water_l": 0.0
+      },
+      {
+        "carbon_kgco2e": 0.6464,
+        "confidence": {
+          "label": "Level 4 - Industry Average",
+          "percent": 68.0,
+          "score": 0.68
+        },
+        "country": "Bangladesh",
+        "energy_kwh": 1.008,
+        "machine_models": [
+          "Generic Stenter Range"
+        ],
+        "machines": "Stenter Machine",
+        "material_mass_kg": 0.8403,
+        "process_group": "Wet Processing",
+        "process_id": "PROC007",
+        "process_name": "Finishing",
+        "process_steps": [],
+        "source_status": "KG-backed",
+        "step_order": 7,
+        "water_l": 16.81
+      },
+      {
+        "carbon_kgco2e": 0.0782,
+        "confidence": {
+          "label": "Level 2 - Supplier Data",
+          "percent": 82.0,
+          "score": 0.82
+        },
+        "country": "Bangladesh",
+        "energy_kwh": 0.126,
+        "machine_models": [
+          "Generic CNC Fabric Cutter"
+        ],
+        "machines": "Fabric Spreading Machine|CNC Fabric Cutter",
+        "material_mass_kg": 0.8403,
+        "process_group": "Garment Manufacturing",
+        "process_id": "PROC008",
+        "process_name": "Cutting",
+        "process_steps": [],
+        "source_status": "KG-backed",
+        "step_order": 8,
+        "water_l": 0.0
+      },
+      {
+        "carbon_kgco2e": 0.032,
+        "confidence": {
+          "label": "Level 2 - Supplier Data",
+          "percent": 80.0,
+          "score": 0.8
+        },
+        "country": "Bangladesh",
+        "energy_kwh": 0.05,
+        "machine_models": [
+          "Juki DDL-8700"
+        ],
+        "machines": "Lockstitch Machine|Overlock Machine|Button Machine",
+        "material_mass_kg": 0.7143,
+        "process_group": "Garment Manufacturing",
+        "process_id": "PROC009",
+        "process_name": "Sewing",
+        "process_steps": [
+          {
+            "sequence": 1,
+            "step_name": "Panel Assembly"
+          },
+          {
+            "sequence": 2,
+            "step_name": "Trim Attachment"
+          },
+          {
+            "sequence": 3,
+            "step_name": "Final Stitch Inspection"
+          }
+        ],
+        "source_status": "KG-backed",
+        "step_order": 9,
+        "water_l": 0.0
+      },
+      {
+        "carbon_kgco2e": 0.0178,
+        "confidence": {
+          "label": "Level 5 - Fallback Logic",
+          "percent": 48.0,
+          "score": 0.48
+        },
+        "country": "Bangladesh",
+        "energy_kwh": 0.0,
+        "machine_models": [],
+        "machines": "Industrial washer|Tumble dryer",
+        "material_mass_kg": 0.7,
+        "process_group": "Wet Processing",
+        "process_id": "PROC-EXT-302",
+        "process_name": "Garment Washing and Finishing",
+        "process_steps": [],
+        "source_status": "V1 inferred",
+        "step_order": 10,
+        "water_l": 7.0
+      },
+      {
+        "carbon_kgco2e": 0.0219,
+        "confidence": {
+          "label": "Level 2 - Supplier Data",
+          "percent": 84.0,
+          "score": 0.84
+        },
+        "country": "Bangladesh",
+        "energy_kwh": 0.035,
+        "machine_models": [],
+        "machines": "Packing Conveyor",
+        "material_mass_kg": 0.7,
+        "process_group": "Garment Manufacturing",
+        "process_id": "PROC010",
+        "process_name": "Packaging",
+        "process_steps": [],
+        "source_status": "KG-backed",
+        "step_order": 11,
+        "water_l": 0.0
+      }
+    ],
+    "resolved_weight_g": 700,
+    "route_id": "ROUTE-APP-WVN-DENIM-001",
+    "taxonomy_id": "TAX-APP-WVN-DEN-001",
+    "template_id": "TPL-APP-WVN-DEN-001",
+    "totals": {
+      "carbon_kgco2e": 3.014,
+      "chemical_carbon_kgco2e": 0.037,
+      "energy_kwh": 4.616,
+      "transport_carbon_kgco2e": 0.007,
+      "water_l": 8842.959
+    }
+  },
+  "poly_tee_blend": {
+    "activity_count": 15,
+    "activity_totals": {
+      "Chemical|kg": 0.0049,
+      "Electricity|kWh": 0.4645,
+      "Transport|ton-km": 0.00131
+    },
+    "impact": {
+      "carbon_kgco2e": 0.471,
+      "chemical_carbon_kgco2e": 0.005,
+      "energy_kwh": 0.988,
+      "transport_carbon_kgco2e": 0.001,
+      "water_l": 36.735
+    },
+    "machine_breakdown": [
+      {
+        "brochure_url": "TBD_PUBLIC_BROCHURE_REQUIRED",
+        "confidence": {
+          "label": "Level 4 - Industry Average",
+          "percent": 50.0,
+          "score": 0.5
+        },
+        "datasheet_url": "TBD_PUBLIC_DATASHEET_REQUIRED",
+        "electricity_kwh": 0.3787,
+        "electricity_rate": 1.8,
+        "machine_category": "Circular Knitting Machine",
+        "machine_model": "Mayer & Cie Relanit",
+        "machine_model_id": "MMOD002",
+        "process_name": "Knitting",
+        "source": "KG V2 Circular Knitting Machine proxy; brochure review required",
+        "source_tier": "proxy",
+        "step_order": 3,
+        "unit": "kWh/kg fabric",
+        "water_l": 0.0
+      },
+      {
+        "brochure_url": "",
+        "confidence": {
+          "label": "Level 4 - Industry Average",
+          "percent": 50.0,
+          "score": 0.5
+        },
+        "datasheet_url": "TBD_PUBLIC_DATASHEET_REQUIRED",
+        "electricity_kwh": 0.2449,
+        "electricity_rate": 1.2,
+        "machine_category": "Stenter Machine",
+        "machine_model": "Generic Stenter Range",
+        "machine_model_id": "MMOD005",
+        "process_name": "Heat Setting",
+        "source": "KG V2 Stenter Machine proxy",
+        "source_tier": "proxy",
+        "step_order": 4,
+        "unit": "kWh/kg fabric",
+        "water_l": 2.04
+      },
+      {
+        "brochure_url": "TBD_PUBLIC_BROCHURE_REQUIRED",
+        "confidence": {
+          "label": "Level 5 - Fallback Logic",
+          "percent": 30.0,
+          "score": 0.3
+        },
+        "datasheet_url": "TBD_PUBLIC_DATASHEET_REQUIRED",
+        "electricity_kwh": 0.0306,
+        "electricity_rate": 0.15,
+        "machine_category": "Jet Dyeing Machine",
+        "machine_model": "Thies iMaster H2O",
+        "machine_model_id": "MMOD001",
+        "process_name": "Disperse Dyeing",
+        "source": "Demo seed (18kW/120kg/h) \u2014 NOT authentic; pending real Thies iMaster H2O brochure",
+        "source_tier": "demo-seed",
+        "step_order": 5,
+        "unit": "kWh/kg fabric",
+        "water_l": 15.31
+      },
+      {
+        "brochure_url": "",
+        "confidence": {
+          "label": "Level 4 - Industry Average",
+          "percent": 50.0,
+          "score": 0.5
+        },
+        "datasheet_url": "TBD_PUBLIC_DATASHEET_REQUIRED",
+        "electricity_kwh": 0.2449,
+        "electricity_rate": 1.2,
+        "machine_category": "Stenter Machine",
+        "machine_model": "Generic Stenter Range",
+        "machine_model_id": "MMOD005",
+        "process_name": "Finishing",
+        "source": "KG V2 Stenter Machine proxy",
+        "source_tier": "proxy",
+        "step_order": 6,
+        "unit": "kWh/kg fabric",
+        "water_l": 2.04
+      },
+      {
+        "brochure_url": "",
+        "confidence": {
+          "label": "Level 4 - Industry Average",
+          "percent": 50.0,
+          "score": 0.5
+        },
+        "datasheet_url": "TBD_PUBLIC_DATASHEET_REQUIRED",
+        "electricity_kwh": 0.0306,
+        "electricity_rate": 0.15,
+        "machine_category": "CNC Fabric Cutter",
+        "machine_model": "Generic CNC Fabric Cutter",
+        "machine_model_id": "MMOD006",
+        "process_name": "Cutting",
+        "source": "KG V2 CNC Fabric Cutter proxy",
+        "source_tier": "proxy",
+        "step_order": 7,
+        "unit": "kWh/kg garment",
+        "water_l": 0.0
+      },
+      {
+        "brochure_url": "TBD_PUBLIC_BROCHURE_REQUIRED",
+        "confidence": {
+          "label": "Level 4 - Industry Average",
+          "percent": 50.0,
+          "score": 0.5
+        },
+        "datasheet_url": "TBD_PUBLIC_DATASHEET_REQUIRED",
+        "electricity_kwh": 0.05,
+        "electricity_rate": 0.05,
+        "machine_category": "Lockstitch Machine",
+        "machine_model": "Juki DDL-8700",
+        "machine_model_id": "MMOD004",
+        "process_name": "Sewing",
+        "source": "KG V2 Lockstitch Machine proxy; datasheet review required",
+        "source_tier": "proxy",
+        "step_order": 8,
+        "unit": "kWh/garment",
+        "water_l": 0.0
+      }
+    ],
+    "process_breakdown": [
+      {
+        "carbon_kgco2e": 0.0003,
+        "confidence": {
+          "label": "Level 4 - Industry Average",
+          "percent": 62.0,
+          "score": 0.62
+        },
+        "country": "China",
+        "energy_kwh": 0.0,
+        "machine_models": [],
+        "machines": "Extrusion and spinning line",
+        "material_mass_kg": 0.2104,
+        "process_group": "Fiber Production",
+        "process_id": "PROC-EXT-101",
+        "process_name": "Synthetic Fiber Production",
+        "process_steps": [],
+        "source_status": "V1 inferred",
+        "step_order": 1,
+        "water_l": 0.0
+      },
+      {
+        "carbon_kgco2e": 0.0,
+        "confidence": {
+          "label": "Level 4 - Industry Average",
+          "percent": 58.0,
+          "score": 0.58
+        },
+        "country": "China",
+        "energy_kwh": 0.0,
+        "machine_models": [],
+        "machines": "Texturing machine",
+        "material_mass_kg": 0.2104,
+        "process_group": "Yarn Production",
+        "process_id": "PROC-EXT-102",
+        "process_name": "Texturing or Yarn Preparation",
+        "process_steps": [],
+        "source_status": "V1 inferred",
+        "step_order": 2,
+        "water_l": 0.0
+      },
+      {
+        "carbon_kgco2e": 0.1782,
+        "confidence": {
+          "label": "Level 2 - Supplier Data",
+          "percent": 82.0,
+          "score": 0.82
+        },
+        "country": "Vietnam",
+        "energy_kwh": 0.379,
+        "machine_models": [
+          "Mayer & Cie Relanit"
+        ],
+        "machines": "Circular Knitting Machine",
+        "material_mass_kg": 0.2104,
+        "process_group": "Fabric Production",
+        "process_id": "PROC004",
+        "process_name": "Knitting",
+        "process_steps": [],
+        "source_status": "KG-backed",
+        "step_order": 3,
+        "water_l": 0.0
+      },
+      {
+        "carbon_kgco2e": 0.1151,
+        "confidence": {
+          "label": "Level 4 - Industry Average",
+          "percent": 60.0,
+          "score": 0.6
+        },
+        "country": "Vietnam",
+        "energy_kwh": 0.245,
+        "machine_models": [
+          "Generic Stenter Range"
+        ],
+        "machines": "Stenter Machine",
+        "material_mass_kg": 0.2041,
+        "process_group": "Fabric Preparation",
+        "process_id": "PROC-EXT-103",
+        "process_name": "Heat Setting",
+        "process_steps": [],
+        "source_status": "V1 inferred",
+        "step_order": 4,
+        "water_l": 2.04
+      },
+      {
+        "carbon_kgco2e": 0.0146,
+        "confidence": {
+          "label": "Level 4 - Industry Average",
+          "percent": 56.0,
+          "score": 0.56
+        },
+        "country": "Vietnam",
+        "energy_kwh": 0.031,
+        "machine_models": [
+          "Thies iMaster H2O"
+        ],
+        "machines": "Jet Dyeing Machine",
+        "material_mass_kg": 0.2041,
+        "process_group": "Wet Processing",
+        "process_id": "PROC-EXT-104",
+        "process_name": "Disperse Dyeing",
+        "process_steps": [],
+        "source_status": "V1 inferred",
+        "step_order": 5,
+        "water_l": 30.61
+      },
+      {
+        "carbon_kgco2e": 0.1203,
+        "confidence": {
+          "label": "Level 3 - Trade Data",
+          "percent": 74.0,
+          "score": 0.74
+        },
+        "country": "Vietnam",
+        "energy_kwh": 0.245,
+        "machine_models": [
+          "Generic Stenter Range"
+        ],
+        "machines": "Stenter Machine|Compactor Machine",
+        "material_mass_kg": 0.2041,
+        "process_group": "Wet Processing",
+        "process_id": "PROC007",
+        "process_name": "Finishing",
+        "process_steps": [],
+        "source_status": "KG-backed",
+        "step_order": 6,
+        "water_l": 4.08
+      },
+      {
+        "carbon_kgco2e": 0.0144,
+        "confidence": {
+          "label": "Level 2 - Supplier Data",
+          "percent": 86.0,
+          "score": 0.86
+        },
+        "country": "Vietnam",
+        "energy_kwh": 0.031,
+        "machine_models": [
+          "Generic CNC Fabric Cutter"
+        ],
+        "machines": "Fabric Spreading Machine|CNC Fabric Cutter",
+        "material_mass_kg": 0.2041,
+        "process_group": "Garment Manufacturing",
+        "process_id": "PROC008",
+        "process_name": "Cutting",
+        "process_steps": [],
+        "source_status": "KG-backed",
+        "step_order": 7,
+        "water_l": 0.0
+      },
+      {
+        "carbon_kgco2e": 0.0238,
+        "confidence": {
+          "label": "Level 2 - Supplier Data",
+          "percent": 86.0,
+          "score": 0.86
+        },
+        "country": "Vietnam",
+        "energy_kwh": 0.05,
+        "machine_models": [
+          "Juki DDL-8700"
+        ],
+        "machines": "Lockstitch Machine|Overlock Machine",
+        "material_mass_kg": 0.1735,
+        "process_group": "Garment Manufacturing",
+        "process_id": "PROC009",
+        "process_name": "Sewing",
+        "process_steps": [
+          {
+            "sequence": 1,
+            "step_name": "Panel Assembly"
+          },
+          {
+            "sequence": 2,
+            "step_name": "Trim Attachment"
+          },
+          {
+            "sequence": 3,
+            "step_name": "Final Stitch Inspection"
+          }
+        ],
+        "source_status": "KG-backed",
+        "step_order": 8,
+        "water_l": 0.0
+      },
+      {
+        "carbon_kgco2e": 0.004,
+        "confidence": {
+          "label": "Level 2 - Supplier Data",
+          "percent": 86.0,
+          "score": 0.86
+        },
+        "country": "Vietnam",
+        "energy_kwh": 0.009,
+        "machine_models": [],
+        "machines": "Packing Conveyor",
+        "material_mass_kg": 0.17,
+        "process_group": "Garment Manufacturing",
+        "process_id": "PROC010",
+        "process_name": "Packaging",
+        "process_steps": [],
+        "source_status": "KG-backed",
+        "step_order": 9,
+        "water_l": 0.0
+      }
+    ],
+    "resolved_weight_g": 170,
+    "route_id": "ROUTE-APP-KNT-SYNTH-001",
+    "taxonomy_id": "TAX-APP-KNT-TSH-002",
+    "template_id": "TPL-APP-KNT-TSH-002",
+    "totals": {
+      "carbon_kgco2e": 0.471,
+      "chemical_carbon_kgco2e": 0.005,
+      "energy_kwh": 0.988,
+      "transport_carbon_kgco2e": 0.001,
+      "water_l": 36.735
+    }
+  }
+}
