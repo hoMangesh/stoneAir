@@ -29,13 +29,20 @@ from app.services.document_intelligence import BOMComponent, DocumentSignals
 from app.services.knowledge_loader import load_knowledge_graph, load_master_data
 
 
-# Process groups whose step country is origin-sensitive (the BOM's declared
-# origin should override the route's hardcoded default_country). Farming/agro
-# is where the raw material is grown/recovered; finishing happens downstream and
-# is driven by where the garment is assembled (the route default), not where the
-# fiber was grown. Origin also flows into the chosen route's preference scoring
-# above, so a route authored for the BOM's region wins.
-_ORIGIN_SENSITIVE_PROCESS_GROUPS = {"Fiber Production", "Fiber Preparation"}
+# Origin-sensitive process groups ARE the raw-material-recovery steps whose
+# country should follow the BOM origin (was a module-level apparel set). Now
+# sourced from the resolved domain pack (apparel) so this core module holds no
+# industry values. Same semantics as resource_models._resolve_pack.
+
+
+def _resolve_pack():
+    """Resolve the default domain pack for origin-sensitive process groups."""
+    from domain_packs.bootstrap import bootstrap
+
+    bootstrap()
+    from app.core.domain_registry import resolve
+
+    return resolve(None)
 
 
 def _composition_tokens(blend: list[dict] | None,
@@ -230,4 +237,4 @@ def resolve_origin_context(signals: DocumentSignals) -> dict[str, object] | None
                              master.get("material_origins_by_material"), materials_by_name)
     if not origin:
         return None
-    return {"origin": origin, "process_groups": _ORIGIN_SENSITIVE_PROCESS_GROUPS}
+    return {"origin": origin, "process_groups": _resolve_pack().origin_sensitive_process_groups}

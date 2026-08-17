@@ -1,13 +1,28 @@
 from __future__ import annotations
 
+from typing import TYPE_CHECKING
+
 from app.services.knowledge_loader import confidence_level, load_master_data
 from app.services.source_tier import adjust_activity_confidence, source_tier_from_profile
 
+if TYPE_CHECKING:
+    from app.core.contracts import DomainPack
+
 
 # ---------------------------------------------------------------------------
-# Fallback models kept in code only where the masters lack data (water/chemical
-# dosage). When the masters gain those rows, code should defer to them.
+# Cross-cutting calc parameters (transport hints + export defaults + origin
+# sensitive groups) were module-level apparel constants. They now live in the
+# resolved domain pack (apparel) and are reached through the registry so this
+# core module holds no industry values. The domain-specific calc *model* — the
+# water/chemical/process-energy dicts below — stays here until the Step 3
+# carbon-engine extraction moves it to the apparel carbon model.
 # ---------------------------------------------------------------------------
+
+
+# Water/chemical/process-energy dosage (apparel carbon-model data; relocated to
+# domain_packs/apparel/carbon_model in Step 3). Kept HERE for now because their
+# consumption is wired into estimate_resources; their final home is the pack.
+# TODO(Step 3): move these to the apparel carbon model behind CarbonModel.evaluate.
 
 WATER_MODEL_L_PER_KG = {
     "Cotton Farming": 10000,
@@ -46,22 +61,29 @@ PROCESS_ENERGY_FALLBACK_KWH_PER_KG = {
     "Finishing and Inspection": 0.4,
 }
 
-# Transport legs in the route library are phrased as prose ("Truck to gin",
-# "Export transport") rather than origin->destination pairs. We map the mode
-# noun found in the phrase to a transport_modes.csv row, and use the adjacent
-# step countries (or a default export distance) to size the leg.
-_TRANSPORT_MODE_HINTS = [
-    ("air freight", "Air Freight"),
-    ("ocean freight", "Ocean Freight"),
-    ("ocean", "Ocean Freight"),
-    ("rail", "Rail"),
-    ("truck", "Truck"),
-]
+# Cross-cutting transport/export values (was _TRANSPORT_MODE_HINTS,
+# DEFAULT_EXPORT_DISTANCE_KM, DEFAULT_EXPORT_MODE) and the origin-sensitive
+# process groups (was _ORIGIN_SENSITIVE_PROCESS_GROUPS) now live in the resolved
+# domain pack; resolve() lazily fetches them so core holds no apparel values.
+# See _resolve_pack() below — keep this import-free at module load (no cycle).
 
-# Default export leg when the route says "Export transport" but no explicit
-# origin->destination is known. Sized to a typical China/Vietnam -> US ocean leg.
-DEFAULT_EXPORT_DISTANCE_KM = 13500
-DEFAULT_EXPORT_MODE = "Ocean Freight"
+
+def _resolve_pack():
+    """Resolve the default domain pack (apparel) for cross-cutting rules.
+
+    Lazily bootstraps the registered packs first so ``resolve`` succeeds on the
+    first call from any code path. This is the only place ``resource_models``
+    touches the registry; it returns the pack whose ``transport_mode_hints``,
+    ``default_export_*`` and ``origin_sensitive_process_groups`` drive the
+    generic transport + origin logic. The apparel carbon *model* (water/
+    chemical/process-fallback) moves to the pack in Step 3.
+    """
+    from domain_packs.bootstrap import bootstrap
+
+    bootstrap()
+    from app.core.domain_registry import resolve
+
+    return resolve(None)
 
 
 def _as_float(value: str | None, default: float = 0.0) -> float:
@@ -87,11 +109,9 @@ def _activity_quantity(unit: str, rate: float, weight_kg: float) -> float:
     return rate * weight_kg
 
 
-# Process groups whose step country is origin-sensitive — the BOM's declared
-# origin (where the fiber/material is grown or recovered) overrides the route's
-# hardcoded default_country. Finishing steps happen where the garment is
-# assembled, so they keep the route default. Mirrors route_resolution's set.
-_ORIGIN_SENSITIVE_PROCESS_GROUPS = {"Fiber Production", "Fiber Preparation"}
+# Origin-sensitive process groups now live in the resolved pack (was the
+# module-level set here, mirrored in route_resolution in Step 2.4). Pulled via
+# _resolve_pack() so this core module holds no apparel process-name values.
 
 
 def _canonical_country(name: str, master_data: dict[str, object] | None) -> str:
@@ -114,7 +134,8 @@ def _canonical_country(name: str, master_data: dict[str, object] | None) -> str:
 
 
 def _step_country(step: dict[str, str], origin_context: dict[str, object] | None,
-                  master_data: dict[str, object] | None = None) -> str:
+                  master_data: dict[str, object] | None = None,
+                  pack: "DomainPack | None" = None) -> str:
     """Resolve a step's country, injecting the BOM origin for origin-sensitive groups.
 
     Without an origin_context (or for non-origin-sensitive steps) this returns the
@@ -125,11 +146,15 @@ def _step_country(step: dict[str, str], origin_context: dict[str, object] | None
     origin is canonicalized to the masters' Title-Case country key so downstream
     ``.get(country)`` lookups (emission factors, transport legs, region machine
     rank) actually hit instead of falling to Default on a casing mismatch.
+
+    ``pack`` carries the origin-sensitive process groups (apparel fact); resolved
+    lazily when omitted so existing call sites keep working during the Step 2/3
+    transition.
     """
     route_default = step.get("default_country") or "Default"
     if not origin_context:
         return route_default
-    groups = origin_context.get("process_groups") or _ORIGIN_SENSITIVE_PROCESS_GROUPS
+    groups = origin_context.get("process_groups") or (pack or _resolve_pack()).origin_sensitive_process_groups
     if (step.get("process_group") or "").strip() in groups:
         origin = (origin_context.get("origin") or "").strip()
         if origin:
@@ -138,7 +163,8 @@ def _step_country(step: dict[str, str], origin_context: dict[str, object] | None
 
 
 def _select_machine_records(step: dict[str, str], master_data: dict[str, object],
-                             origin_context: dict[str, object] | None = None) -> list[dict[str, str]]:
+                             origin_context: dict[str, object] | None = None,
+                             pack: "DomainPack | None" = None) -> list[dict[str, str]]:
     """Pick the machine model(s) for a step.
 
     Region-prioritized: among models in the parked machine category, prefer the
@@ -150,7 +176,7 @@ def _select_machine_records(step: dict[str, str], master_data: dict[str, object]
     machine_models_by_category = master_data["machine_models_by_category"]
     machine_energy_by_model = master_data["machine_energy_by_model"]
     region_machine_rank = master_data.get("region_machine_rank", {})
-    country = _step_country(step, origin_context, master_data)
+    country = _step_country(step, origin_context, master_data, pack)
     selected: list[dict[str, str]] = []
 
     for machine_name in _split_pipe(step.get("default_machine_names")):
@@ -198,10 +224,16 @@ def _chemical_factor(chemical_name: str, master_data: dict[str, object]) -> dict
     return factors.get(chemical_name) or factors.get(chemical_name.strip().title(), {})
 
 
-def _transport_factor(mode: str, master_data: dict[str, object]) -> tuple[float, str, float]:
-    """Return (factor, factor_id, confidence) for a transport mode."""
+def _transport_factor(mode: str, master_data: dict[str, object],
+                       pack: "DomainPack | None" = None) -> tuple[float, str, float]:
+    """Return (factor, factor_id, confidence) for a transport mode.
+
+    Falls back to the pack's default export mode when ``mode`` is unknown
+    (apparel fact, was the module-level``DEFAULT_EXPORT_MODE`` constant).
+    """
+    default_export_mode = (pack or _resolve_pack()).default_export_mode
     by_mode = master_data.get("transport_factors_by_mode", {})
-    record = by_mode.get(mode) or by_mode.get(DEFAULT_EXPORT_MODE, {})
+    record = by_mode.get(mode) or by_mode.get(default_export_mode, {})
     return (
         _as_float(record.get("factor")),
         record.get("transport_id", "EF-TRANS-DEF-2026"),
@@ -215,6 +247,7 @@ def _resolve_transport_leg(
     index: int,
     master_data: dict[str, object],
     origin_context: dict[str, object] | None = None,
+    pack: "DomainPack | None" = None,
 ) -> dict[str, object] | None:
     """Turn a route step's `transport_leg_after` prose into an emissions row.
 
@@ -223,18 +256,27 @@ def _resolve_transport_leg(
     Destination = next step's country if available, else a default export hub.
     Distance/mode come from transport_routes.csv when the (origin, destination)
     leg is known, else the default export distance.
+
+    The mode-hint table + export defaults are apparel facts carried by the
+    resolved ``pack`` (were module-level constants here). Threaded via ``pack``
+    so this core helper holds no industry values.
     """
     leg_phrase = (step.get("transport_leg_after") or "").strip().lower()
     if not leg_phrase or leg_phrase == "none":
         return None
 
-    route_ids_by_leg = master_data.get("transport_routes_by_leg", {})
-    origin_country = _step_country(step, origin_context, master_data).strip()
-    next_step = route_steps[index + 1] if index + 1 < len(route_steps) else None
-    destination_country = (_step_country(next_step, origin_context, master_data) if next_step else "").strip() or "United States"
+    pack = pack or _resolve_pack()
+    transport_mode_hints = pack.transport_mode_hints
+    default_export_distance_km = pack.default_export_distance_km
+    default_export_mode = pack.default_export_mode
 
-    chosen_mode = DEFAULT_EXPORT_MODE
-    for needle, mode in _TRANSPORT_MODE_HINTS:
+    route_ids_by_leg = master_data.get("transport_routes_by_leg", {})
+    origin_country = _step_country(step, origin_context, master_data, pack).strip()
+    next_step = route_steps[index + 1] if index + 1 < len(route_steps) else None
+    destination_country = (_step_country(next_step, origin_context, master_data, pack) if next_step else "").strip() or "United States"
+
+    chosen_mode = default_export_mode
+    for needle, mode in transport_mode_hints:
         if needle in leg_phrase:
             chosen_mode = mode
             break
@@ -245,9 +287,9 @@ def _resolve_transport_leg(
         chosen_mode = leg_record.get("mode", chosen_mode) or chosen_mode
     if not distance_km:
         # "Export transport" or unmapped leg -> assume the long export haul.
-        distance_km = DEFAULT_EXPORT_DISTANCE_KM
+        distance_km = default_export_distance_km
         if "export" in leg_phrase:
-            chosen_mode = DEFAULT_EXPORT_MODE
+            chosen_mode = default_export_mode
 
     return {
         "origin": origin_country or "Default",
@@ -260,6 +302,10 @@ def _resolve_transport_leg(
 def estimate_resources(route_steps: list[dict[str, str]], weight_g: int,
                        origin_context: dict[str, object] | None = None) -> dict[str, object]:
     master_data = load_master_data()
+    # Resolve the domain pack once for cross-cutting rules (origin-sensitive
+    # groups, transport hints, export defaults). Apparel facts now flow from
+    # the pack; this core function holds none itself.
+    pack = _resolve_pack()
     final_weight_kg = max(weight_g / 1000, 0.01)
     yield_by_process = master_data.get("yield_model_by_process", {})
 
@@ -299,12 +345,12 @@ def estimate_resources(route_steps: list[dict[str, str]], weight_g: int,
         step_mass = step_mass_kg[index]
         # Origin-sensitive steps (farming/agro) use the BOM origin's grid; the
         # rest keep the route default. Same helper the machine selection uses.
-        country = _step_country(step, origin_context, master_data)
+        country = _step_country(step, origin_context, master_data, pack)
         factor_record = _electricity_factor(country, master_data)
         factor = _as_float(factor_record.get("factor"), 0.55)
         factor_confidence = _as_float(factor_record.get("confidence"), 0.35)
         factor_id = factor_record.get("factor_id", "EF-ELEC-DEF-2026")
-        machine_records = _select_machine_records(step, master_data, origin_context)
+        machine_records = _select_machine_records(step, master_data, origin_context, pack)
 
         for machine in machine_records:
             electricity_rate = _as_float(machine.get("electricity"))
@@ -441,9 +487,9 @@ def estimate_resources(route_steps: list[dict[str, str]], weight_g: int,
         step_carbon += chemical_carbon_step
 
         # Transport leg after this step.
-        leg = _resolve_transport_leg(step, route_steps, index, master_data, origin_context)
+        leg = _resolve_transport_leg(step, route_steps, index, master_data, origin_context, pack)
         if leg:
-            transport_factor, transport_factor_id, transport_confidence = _transport_factor(leg["mode"], master_data)
+            transport_factor, transport_factor_id, transport_confidence = _transport_factor(leg["mode"], master_data, pack)
             # ton-km = product mass (tons) * distance. Use final garment mass for
             # the export leg; intra-route legs move semi-finished material.
             ton_km = (final_weight_kg / 1000.0) * leg["distance_km"]
