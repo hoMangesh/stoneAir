@@ -235,7 +235,16 @@ def _build_regex_patterns() -> RegexPatterns:
 
 
 def build_pack(*, carbon_model=None) -> DomainPack:
-    """Build the apparel DomainPack. ``carbon_model`` is supplied in Step 3."""
+    """Build the apparel DomainPack.
+
+    ``carbon_model`` defaults to the apparel calc model (water/chemical/
+    process-fallback dicts, relocated from resource_models in Step 3) so the
+    pack carries its full domain calc knowledge. Callers may override it.
+    """
+    if carbon_model is None:
+        from domain_packs.apparel.carbon_model import build_apparel_carbon_model
+
+        carbon_model = build_apparel_carbon_model()
     return DomainPack(
         domain_id="apparel",
         display_name="Clothing & Apparel",

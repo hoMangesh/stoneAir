@@ -10,56 +10,14 @@ if TYPE_CHECKING:
 
 
 # ---------------------------------------------------------------------------
-# Cross-cutting calc parameters (transport hints + export defaults + origin
-# sensitive groups) were module-level apparel constants. They now live in the
-# resolved domain pack (apparel) and are reached through the registry so this
-# core module holds no industry values. The domain-specific calc *model* — the
-# water/chemical/process-energy dicts below — stays here until the Step 3
-# carbon-engine extraction moves it to the apparel carbon model.
+# All apparel calc knowledge (water/chemical/process-fallback dosage, transport
+# hints, export defaults, origin-sensitive groups, material aliases, chemical
+# aliases) now lives in the resolved domain pack (apparel), reached through
+# _resolve_pack(). This core module holds NO industry values. The apparel
+# calc-model dicts (water L/kg, chemical g/kg, process-energy kWh/kg) ride on
+# pack.carbon_model — see domain_packs/apparel/carbon_model.py.
 # ---------------------------------------------------------------------------
 
-
-# Water/chemical/process-energy dosage (apparel carbon-model data; relocated to
-# domain_packs/apparel/carbon_model in Step 3). Kept HERE for now because their
-# consumption is wired into estimate_resources; their final home is the pack.
-# TODO(Step 3): move these to the apparel carbon model behind CarbonModel.evaluate.
-
-WATER_MODEL_L_PER_KG = {
-    "Cotton Farming": 10000,
-    "Pretreatment": 30,
-    "Reactive Dyeing": 75,
-    "Finishing": 10,
-}
-
-CHEMICAL_MODEL_G_PER_KG = {
-    "Pretreatment": {
-        "Caustic Soda": 20,
-        "Wetting Agent": 5,
-    },
-    "Reactive Dyeing": {
-        "Reactive Dye": 30,
-        "Salt": 60,
-        "Soda Ash": 20,
-    },
-    "Finishing": {
-        "Softener": 10,
-    },
-}
-
-# Process-level energy fallback (kWh per kg of material processed) used ONLY when
-# no machine model with an energy profile resolves for a step. This implements the
-# Step 3 rule "if no machines used, find probable carbon emission for the process"
-# — so machineless steps (Cotton Farming, Ginning, Packaging) are not silently zero.
-# Values are industry-average proxies; they get a low confidence flag so reviewers
-# can see which steps still need a real machine energy profile.
-PROCESS_ENERGY_FALLBACK_KWH_PER_KG = {
-    "Cotton Farming": 1.2,      # diesel irrigation + tractor proxy per kg seed cotton
-    "Ginning": 0.18,            # gin electricity per kg fiber
-    "Packaging": 0.05,          # conveyor/press electricity per kg
-    "Sole Molding": 3.1,        # footwear molding (used when no machine row exists)
-    "Cementing and Sole Attachment": 0.9,
-    "Finishing and Inspection": 0.4,
-}
 
 # Cross-cutting transport/export values (was _TRANSPORT_MODE_HINTS,
 # DEFAULT_EXPORT_DISTANCE_KM, DEFAULT_EXPORT_MODE) and the origin-sensitive
@@ -303,9 +261,11 @@ def estimate_resources(route_steps: list[dict[str, str]], weight_g: int,
                        origin_context: dict[str, object] | None = None) -> dict[str, object]:
     master_data = load_master_data()
     # Resolve the domain pack once for cross-cutting rules (origin-sensitive
-    # groups, transport hints, export defaults). Apparel facts now flow from
-    # the pack; this core function holds none itself.
+    # groups, transport hints, export defaults) AND the domain carbon model
+    # (water/chemical/process-fallback dosage). Apparel facts now flow from the
+    # pack; this core function holds none itself.
     pack = _resolve_pack()
+    carbon_model = pack.carbon_model
     final_weight_kg = max(weight_g / 1000, 0.01)
     yield_by_process = master_data.get("yield_model_by_process", {})
 
@@ -413,16 +373,16 @@ def estimate_resources(route_steps: list[dict[str, str]], weight_g: int,
             )
 
         water_process = step.get("water_model_process", "")
-        if water_process in WATER_MODEL_L_PER_KG:
-            water_l = WATER_MODEL_L_PER_KG[water_process] * step_mass
+        if water_process in carbon_model.water_model_l_per_kg:
+            water_l = carbon_model.water_model_l_per_kg[water_process] * step_mass
             step_water_l += water_l
             totals["water_l"] += water_l
 
         # Process-level fallback: if no machine energy profile resolved for this
         # step, the route still names it energy-intensive. Use a process-level
         # kWh/kg proxy so the step is not silently zero-carbon. Low confidence.
-        if not machine_records and step["process_name"] in PROCESS_ENERGY_FALLBACK_KWH_PER_KG:
-            fallback_rate = PROCESS_ENERGY_FALLBACK_KWH_PER_KG[step["process_name"]]
+        if not machine_records and step["process_name"] in carbon_model.process_energy_fallback_kwh_per_kg:
+            fallback_rate = carbon_model.process_energy_fallback_kwh_per_kg[step["process_name"]]
             fallback_kwh = fallback_rate * step_mass
             fallback_carbon = fallback_kwh * factor
             activity_confidence = min(0.3, factor_confidence, _as_float(step.get("confidence_prior"), 0.35))
@@ -454,7 +414,7 @@ def estimate_resources(route_steps: list[dict[str, str]], weight_g: int,
         # produces one activity row so its footprint is traceable.
         chemical_process = step.get("chemical_model_process", "")
         chemical_carbon_step = 0.0
-        for chemical, dosage in CHEMICAL_MODEL_G_PER_KG.get(chemical_process, {}).items():
+        for chemical, dosage in carbon_model.chemical_model_g_per_kg.get(chemical_process, {}).items():
             grams = dosage * step_mass
             chemical_inventory[chemical] = chemical_inventory.get(chemical, 0.0) + grams
             chem_factor_record = _chemical_factor(chemical, master_data)
