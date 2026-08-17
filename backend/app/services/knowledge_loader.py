@@ -3,9 +3,15 @@ from __future__ import annotations
 import csv
 from functools import lru_cache
 from pathlib import Path
-from typing import Any
+from typing import TYPE_CHECKING, Any
 
 from app.config import MASTER_DATASETS, PRODUCT_TAXONOMY_CSV, PRODUCT_TEMPLATE_CSV, ROUTE_LIBRARY_CSV
+
+if TYPE_CHECKING:
+    # Avoid a runtime cycle: the apparel pack imports core contracts, and a pack
+    # module's build does not itself import knowledge_loader. Keep the type
+    # reference import-only.
+    from app.core.contracts import DomainPack
 
 
 def _read_csv(path: Path) -> list[dict[str, str]]:
@@ -82,7 +88,21 @@ def load_knowledge_graph() -> dict[str, Any]:
 
 
 @lru_cache(maxsize=1)
-def load_master_data() -> dict[str, Any]:
+def load_master_data(pack: "DomainPack | None" = None) -> dict[str, Any]:
+    # Domain knowledge (the chemical-factor aliases used below) lives in the
+    # resolved domain pack, never hardcoded in core. When a caller passes no
+    # pack, we resolve the default ("apparel") so the existing call-sites — and
+    # the parity baseline — stay byte-identical. lru_cache keys on the pack
+    # instance; the apparel pack is a process singleton, so this is one entry.
+    if pack is None:
+        from domain_packs.bootstrap import bootstrap
+
+        bootstrap()  # register the available packs (apparel) if not yet
+        from app.core.domain_registry import resolve
+
+        pack = resolve(None)
+    chemical_factor_aliases = pack.chemical_factor_aliases
+
     datasets = {
         name: _read_csv(path)
         for name, path in MASTER_DATASETS.items()
@@ -128,23 +148,16 @@ def load_master_data() -> dict[str, Any]:
     # Chemical emission factors: emission_factors.csv carries them as rows with
     # activity_type=Chemical and a factor_id encoding the chemical name (no
     # chemical_name column). Map the readable names used in resource_models to
-    # those rows so the carbon engine can look them up.
-    _CHEMICAL_FACTOR_NAME_ALIASES = {
-        "Reactive Dye": "REACTIVE-DYE",
-        "Salt": "SALT",
-        "Caustic Soda": "CAUSTIC-SODA",
-        "Soda Ash": "SODA-ASH",
-        "Softener": "SOFTENER",
-        "Wetting Agent": "WETTING-AGENT",
-        "Adhesive": "ADHESIVE",
-    }
+    # those rows so the carbon engine can look them up. The alias map is a
+    # domain-pack fact (apparel's wet-processing chemicals) — pulled from the
+    # resolved pack above rather than held as a core constant (Step 2.1).
     chemical_factor_rows = {
         row["factor_id"]: row
         for row in datasets["emission_factors"]
         if row.get("activity_type") == "Chemical" and row.get("factor")
     }
     chemical_emission_factors_by_name = {}
-    for chemical_name, factor_token in _CHEMICAL_FACTOR_NAME_ALIASES.items():
+    for chemical_name, factor_token in chemical_factor_aliases.items():
         for factor_id, row in chemical_factor_rows.items():
             if factor_token in factor_id:
                 chemical_emission_factors_by_name[chemical_name] = row
