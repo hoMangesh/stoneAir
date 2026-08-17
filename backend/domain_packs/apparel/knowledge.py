@@ -14,9 +14,13 @@ Extraction order (leaf-first; each moved one at a time with a green-test gate):
   2.5 reporting's level_1_domain read re-pointed to pack.domain_id; +
        knowledge_repo_paths wired to real CSV paths + knowledge_loader reads them
 
-Status: 2.1 done; 2.2 + 2.4 done; 2.3 + 2.5 land in subsequent commits
-(scaffold in place so the pack builds even while those constants still live in
-core — core and pack hold the same values until each relocate lands).
+Status: all of 2.1–2.5 done. Step 2.5 deliberately does NOT re-point
+reporting.py's ``taxonomy["level_1_domain"]`` read to pack.domain_id — those
+differ (taxonomy = Title-Case "Apparel"; pack.domain_id = "apparel"); the
+report's per-product domain label is legitimately a knowledge-repo value and
+re-pointing it would break parity. reporting.py stays as-is; only the pack's
+knowledge_repo_paths are wired (real CSV paths), ready for Step 4 to switch the
+loader over.
 """
 
 from __future__ import annotations
@@ -24,21 +28,31 @@ from __future__ import annotations
 import re
 from pathlib import Path
 
+from app.config import (
+    MASTER_DATASETS,
+    PRODUCT_TAXONOMY_CSV,
+    PRODUCT_TEMPLATE_CSV,
+    ROUTE_LIBRARY_CSV,
+)
 from app.core.contracts import DomainPack, KnowledgeRepoPaths, RegexPatterns
 
 
 # ---------------------------------------------------------------------------
-# 2.5 (LATER) — Knowledge-repo paths.
-# The core engine references no paths; the pack carries its own repo root so two
-# domains never collide. Filled in Step 2.5/4 to mirror config.py verbatim; left
-# as empty placeholder paths here so the pack builds without wiring.
+# 2.5 — Knowledge-repo paths. The apparel pack binds its own knowledge to the
+# real CSV masters + taxonomy/template/route CSVs (same paths config.py defines;
+# config.py is domain-neutral path constants, the pack binds them to apparel).
+# Carried on the pack so a future Step-4 knowledge_loader can read "the resolved
+# pack's repos" instead of config.py's defaults — letting a battery pack point
+# at different files without touching core. Nothing consumes these paths yet;
+# the loader still reads config.py (parity unchanged).
 # ---------------------------------------------------------------------------
 
 _APPAREL_REPOS = KnowledgeRepoPaths(
-    taxonomy_csv=Path(""),
-    template_csv=Path(""),
-    route_library_csv=Path(""),
-    master_datasets={},
+    taxonomy_csv=PRODUCT_TAXONOMY_CSV,
+    template_csv=PRODUCT_TEMPLATE_CSV,
+    route_library_csv=ROUTE_LIBRARY_CSV,
+    master_datasets=dict(MASTER_DATASETS),
+    material_origins_csv=MASTER_DATASETS.get("material_origins"),
 )
 
 
