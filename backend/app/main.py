@@ -57,6 +57,13 @@ app.add_middleware(
     allow_headers=["*"],
 )
 
+# Activate installed domain plugins at backend boot. This keeps the HTTP layer
+# domain-agnostic: it knows only the registry, while bootstrap owns the list of
+# available packs.
+from domain_packs.bootstrap import bootstrap as _bootstrap_domain_packs
+
+_bootstrap_domain_packs()
+
 
 @app.get("/api/health")
 def health() -> dict[str, str]:

@@ -112,8 +112,9 @@ class TestRegistryBoundary:
         assert DEFAULT_DOMAIN == "apparel"
 
     def test_known_returns_registered_domains(self):
-        # apparel is registered by the bootstrap at conftest time.
-        assert known() == ["apparel"]
+        # Built-in packs are registered by the explicit bootstrap. Dummy proves
+        # core can boot against another implementation without an apparel branch.
+        assert known() == ["apparel", "dummy"]
 
     def test_unknown_named_domain_raises_not_silent_fallback(self):
         # A named-but-unknown domain must raise; never default to apparel — that

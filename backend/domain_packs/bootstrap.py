@@ -30,6 +30,7 @@ def bootstrap() -> None:
     # itself. Importing here (not in core) keeps the dependency direction purely
     # inward — core depends on the contract; the bootstrap depends on the packs.
     import domain_packs.apparel  # noqa: F401  (registration side-effect)
+    import domain_packs.dummy  # noqa: F401  (contract-validation plugin)
     _BOOTSTRAPPED = True
 
 
