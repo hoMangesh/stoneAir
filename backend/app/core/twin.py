@@ -28,6 +28,9 @@ _SECTION_STAGES = {
     "resources": "evaluated",
     "report": "reported",
     "inference_trace": "traced",
+    # Optional, additive Workstream 4 enrichment. Existing pipelines remain
+    # valid when no reasoning service has been configured.
+    "reasoning": "reasoned",
     "workflow": "enriched",
     "brochure_enrichment": "enriched",
     "persistence": "persisted",
@@ -63,6 +66,30 @@ class ProductDigitalTwin:
             created_at=datetime.now(UTC).replace(microsecond=0).isoformat().replace("+00:00", "Z"),
         )
         twin.enrich(section="input", value=input_data, owner="api.intake")
+        return twin
+
+    @classmethod
+    def from_dict(cls, value: dict[str, Any]) -> "ProductDigitalTwin":
+        """Rehydrate a serialized twin for stateless API consumers.
+
+        The method deliberately accepts only the canonical public shape.  It
+        does not restore or create any parallel product state.
+        """
+        required = {"twin_id", "domain_id", "created_at", "sections", "history"}
+        missing = required.difference(value)
+        if missing:
+            raise TwinValidationError(f"serialized twin missing fields: {sorted(missing)}")
+        twin = cls(
+            twin_id=str(value["twin_id"]),
+            domain_id=str(value["domain_id"]),
+            created_at=str(value["created_at"]),
+            schema_version=str(value.get("schema_version", TWIN_SCHEMA_VERSION)),
+            version=int(value.get("version", 1)),
+            lifecycle_stage=str(value.get("lifecycle_stage", "created")),
+            sections=deepcopy(value["sections"]),
+            history=deepcopy(value["history"]),
+        )
+        twin.validate()
         return twin
 
     def enrich(self, *, section: str, value: Any, owner: str) -> None:
