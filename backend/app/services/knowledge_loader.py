@@ -87,7 +87,6 @@ def load_knowledge_graph() -> dict[str, Any]:
     }
 
 
-@lru_cache(maxsize=1)
 def load_master_data(pack: "DomainPack | None" = None) -> dict[str, Any]:
     # Domain knowledge (the chemical-factor aliases used below) lives in the
     # resolved domain pack, never hardcoded in core. When a caller passes no
@@ -101,6 +100,15 @@ def load_master_data(pack: "DomainPack | None" = None) -> dict[str, Any]:
         from app.core.domain_registry import resolve
 
         pack = resolve(None)
+    return _load_master_data_for_domain(pack.domain_id)
+
+
+@lru_cache(maxsize=None)
+def _load_master_data_for_domain(domain_id: str) -> dict[str, Any]:
+    """Load and cache masters by stable domain ID, not a mutable pack object."""
+    from app.core.domain_registry import resolve
+
+    pack = resolve(domain_id)
     chemical_factor_aliases = pack.chemical_factor_aliases
 
     datasets = {
@@ -233,3 +241,9 @@ def confidence_level(confidence: float) -> dict[str, object]:
     else:
         label = "Level 5 - Fallback Logic"
     return {"label": label, "score": round(score, 2), "percent": round(percent, 1)}
+
+
+# Backward-compatible cache control for tests and local data-refresh workflows.
+# The public loader is now a domain-aware wrapper, while the actual cache is
+# keyed by domain ID in ``_load_master_data_for_domain``.
+load_master_data.cache_clear = _load_master_data_for_domain.cache_clear  # type: ignore[attr-defined]

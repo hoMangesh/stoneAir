@@ -1,4 +1,84 @@
-# Architecture V2: Manufacturing Intelligence Platform
+# Architecture V3: Domain-Agnostic Manufacturing Intelligence Platform
+
+## Migration Status
+
+The platform is being migrated incrementally from an apparel LCA prototype to a
+domain-agnostic manufacturing intelligence platform. Apparel remains the
+reference implementation and is frozen by golden-output regression checks. No
+API or calculation behavior is replaced wholesale during this migration.
+
+```mermaid
+flowchart LR
+    Client["React client / API consumer"] --> API["FastAPI API"]
+    API --> Core["Core orchestration\ncontracts + carbon dispatch"]
+    Core --> Registry["Domain registry"]
+    Bootstrap["Plugin bootstrap"] --> Registry
+    Registry --> Apparel["Apparel domain pack"]
+    Apparel --> Knowledge["Apparel knowledge repositories\nCSV masters, taxonomy, routes"]
+    Apparel --> Model["Apparel models\nclassification, routes, report, carbon"]
+    Model --> Activity["Shared activity-data machinery"]
+    Activity --> Runtime["Inference + calculation persistence"]
+    Knowledge --> Activity
+```
+
+Dependency direction is deliberate: core depends on contracts only; the plugin
+bootstrap knows concrete packs; packs own domain knowledge and calculation
+rules. `app/core` must never import `domain_packs.apparel`.
+
+## Folder Structure
+
+```text
+backend/
+├── app/
+│   ├── core/                 # DomainPack/CarbonModel contracts, registry, dispatch
+│   ├── services/             # Domain-neutral orchestration and activity mechanics
+│   └── main.py               # Stable HTTP API and domain request resolution
+├── domain_packs/
+│   ├── bootstrap.py          # Explicit plugin registration point
+│   └── apparel/              # Apparel aliases, routes, repositories, carbon rules
+└── tests/
+    ├── _golden/              # Frozen apparel output baseline
+    └── test_ws1_core_boundary.py
+data/
+├── masters/                  # Audited source/master records
+├── Products/ templates/ routes/ # Apparel knowledge repositories (current layout)
+├── calculations/             # Runtime calculation output; not source data
+└── inference/                # Runtime inference output; not source data
+frontend/                     # React client; consumes only public API responses
+docs/                         # Architecture, migration and domain governance
+```
+
+## Stable Core-to-Domain Contract
+
+| Contract | Owner | Stability rule |
+|---|---|---|
+| `DomainPack` | `app.core.contracts` | Pack identity, parsing vocabulary, repository locations, transport policy, and `CarbonModel` are supplied by a plugin. |
+| `CarbonModel.evaluate(...)` | domain pack | Returns `totals`, `process_breakdown`, `machine_breakdown`, `activity_trace`, and `chemical_inventory`. |
+| `ProductIntelligence` | domain pack | Classifies product signals and matches templates for the selected domain. |
+| `RouteResolver` | domain pack | Resolves a route and origin context from the selected domain's knowledge. |
+| `ReportBuilder` | domain pack | Builds the stable public report from classification, route, and resources. |
+| `carbon_engine.evaluate(...)` | `app.core` | Validates the common response shape and dispatches only to the selected pack's model. |
+| `register()/resolve()/known()` | `app.core.domain_registry` | Core has no concrete-pack imports; unknown named domains fail explicitly. |
+| `load_master_data(pack)` | service layer | Loads/caches the pack's repositories by stable domain ID. |
+| `/api/analyze` | API | `domain` is optional for backward compatibility and defaults to Apparel; a named unknown domain returns HTTP 400. |
+
+The common result contract also permits additive metadata such as
+`impact_data_quality`; consumers must not depend on undocumented internal
+calculation fields.
+
+### Dependency Injection Sequence
+
+```mermaid
+sequenceDiagram
+    participant API as API/service facade
+    participant Registry as Domain registry
+    participant Pack as Selected domain pack
+    participant Model as Domain interface
+    API->>Registry: resolve(domain)
+    Registry-->>API: DomainPack
+    API->>Model: classify / resolve / build / evaluate
+    Model-->>API: stable result contract
+```
 
 ## Product Principles
 
@@ -65,6 +145,14 @@ Implemented endpoints:
 - `GET /api/master-domains`
 - `GET /api/knowledge-graph/schema`
 - `POST /api/analyze`
+- `GET /api/inference-records`
+- `GET /api/machine-intelligence`
+- `GET /api/workflow`
+- `POST /api/machine-spec-extract`
+- `GET|POST /api/brochure-review`
+- `POST /api/brochure-promote`
+- `POST /api/brochure-fetch`
+- `GET /api/brochure-coverage`
 
 `POST /api/analyze` returns:
 
@@ -77,6 +165,7 @@ Implemented endpoints:
 - chemical inventory
 - carbon, water, and energy totals
 - confidence framework labels
+- data-quality labels for energy, water, chemicals, and transport
 - digital product passport summary
 
 ## Knowledge Graph Schema

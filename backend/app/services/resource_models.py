@@ -141,7 +141,7 @@ def _select_machine_records(step: dict[str, str], master_data: dict[str, object]
         candidates = list(machine_models_by_category.get(machine_name, []))
         if not candidates:
             continue
-        ranked = _rank_models_by_region(candidates, country, region_machine_rank)
+        ranked = _rank_models_by_region(candidates, country, region_machine_rank, machine_energy_by_model)
         for model in ranked:
             energy_profile = machine_energy_by_model.get(model["machine_model_id"])
             if energy_profile:
@@ -150,7 +150,10 @@ def _select_machine_records(step: dict[str, str], master_data: dict[str, object]
     return selected
 
 
-def _rank_models_by_region(candidates: list[dict[str, str]], country: str, region_rank: dict) -> list[dict[str, str]]:
+def _rank_models_by_region(
+    candidates: list[dict[str, str]], country: str, region_rank: dict,
+    energy_by_model: dict[str, dict[str, str]] | None = None,
+) -> list[dict[str, str]]:
     """Rank machine models by install quantity in the step's country.
 
     Models installed in the region (highest quantity first) come first; the rest
@@ -161,14 +164,27 @@ def _rank_models_by_region(candidates: list[dict[str, str]], country: str, regio
         return candidates
     category = candidates[0].get("machine_category", "")
     preferred = [entry["machine_model_id"] for entry in region_rank.get(country, {}).get(category, [])]
-    if not preferred:
-        return candidates
-    # Models with a regional install rank first (by install-order/index), others last.
+    energy_by_model = energy_by_model or {}
+
+    def source_priority(model: dict[str, str]) -> int:
+        tier = source_tier_from_profile(
+            energy_by_model.get(model.get("machine_model_id", "")),
+            category=model.get("machine_category", ""),
+        ).tier
+        # Preserve the established regional/default ranking for all non-approved
+        # records. The policy change is deliberately narrow: only reviewed
+        # manufacturer evidence displaces the existing selection.
+        return 0 if tier == "manufacturer" else 1
+
+    # Brochure-approved evidence outranks a regional proxy. Regional installation
+    # remains the tie-breaker for models with the same evidence quality.
     return sorted(
         candidates,
-        key=lambda model: preferred.index(model["machine_model_id"])
-        if model["machine_model_id"] in preferred
-        else len(preferred),
+        key=lambda model: (
+            source_priority(model),
+            preferred.index(model["machine_model_id"])
+            if model["machine_model_id"] in preferred else len(preferred),
+        ),
     )
 
 
@@ -257,15 +273,42 @@ def _resolve_transport_leg(
     }
 
 
-def estimate_resources(route_steps: list[dict[str, str]], weight_g: int,
-                       origin_context: dict[str, object] | None = None) -> dict[str, object]:
-    master_data = load_master_data()
-    # Resolve the domain pack once for cross-cutting rules (origin-sensitive
-    # groups, transport hints, export defaults) AND the domain carbon model
-    # (water/chemical/process-fallback dosage). Apparel facts now flow from the
-    # pack; this core function holds none itself.
-    pack = _resolve_pack()
-    carbon_model = pack.carbon_model
+def estimate_resources(
+    route_steps: list[dict[str, str]],
+    weight_g: int,
+    origin_context: dict[str, object] | None = None,
+    domain: str | None = None,
+) -> dict[str, object]:
+    """Evaluate a route through the requested domain pack's carbon model."""
+    from app.core.carbon_engine import evaluate
+    from app.core.domain_registry import resolve
+
+    pack = _resolve_pack() if not domain else resolve(domain)
+    return evaluate(
+        pack=pack,
+        route_steps=route_steps,
+        weight_g=weight_g,
+        origin_context=origin_context,
+        repos=load_master_data(pack),
+    )
+
+
+def evaluate_with_activity_model(
+    *,
+    carbon_model: object,
+    route_steps: list[dict[str, str]],
+    weight_g: int,
+    origin_context: dict[str, object] | None = None,
+    repos: dict[str, object],
+    pack: "DomainPack",
+) -> dict[str, object]:
+    """Shared activity-data calculation machinery used by a domain model.
+
+    This code contains only mechanics: mass balance, factor-times-activity
+    aggregation, transport handling, and the common response schema.  The
+    supplied model owns all domain values and rules.
+    """
+    master_data = repos
     final_weight_kg = max(weight_g / 1000, 0.01)
     yield_by_process = master_data.get("yield_model_by_process", {})
 
@@ -290,6 +333,7 @@ def estimate_resources(route_steps: list[dict[str, str]], weight_g: int,
     machine_breakdown: list[dict[str, object]] = []
     activity_trace: list[dict[str, object]] = []
     chemical_inventory: dict[str, float] = {}
+    water_proxy_processes: list[str] = []
     totals = {
         "energy_kwh": 0.0,
         "water_l": 0.0,
@@ -377,6 +421,7 @@ def estimate_resources(route_steps: list[dict[str, str]], weight_g: int,
             water_l = carbon_model.water_model_l_per_kg[water_process] * step_mass
             step_water_l += water_l
             totals["water_l"] += water_l
+            water_proxy_processes.append(step["process_name"])
 
         # Process-level fallback: if no machine energy profile resolved for this
         # step, the route still names it energy-intensive. Use a process-level
@@ -405,6 +450,8 @@ def estimate_resources(route_steps: list[dict[str, str]], weight_g: int,
                     "carbon_kgco2e": round(fallback_carbon, 4),
                     "source": "Process-level energy proxy (no machine energy profile yet)",
                     "approval_status": "Fallback Logic",
+                    "source_tier": "fallback",
+                    "source_tier_label": "Process-level industry proxy",
                     "confidence": confidence_level(activity_confidence),
                 }
             )
@@ -438,6 +485,8 @@ def estimate_resources(route_steps: list[dict[str, str]], weight_g: int,
                         "carbon_kgco2e": round(chem_carbon, 4),
                         "source": chem_factor_record.get("source", ""),
                         "approval_status": chem_factor_record.get("approval_status", ""),
+                        "source_tier": "proxy",
+                        "source_tier_label": "Emission-factor proxy (pending validation)",
                         "confidence": confidence_level(activity_confidence),
                     }
                 )
@@ -472,6 +521,8 @@ def estimate_resources(route_steps: list[dict[str, str]], weight_g: int,
                     "carbon_kgco2e": round(transport_carbon, 5),
                     "source": "GLEC freight proxy",
                     "approval_status": "Pending Validation",
+                    "source_tier": "proxy",
+                    "source_tier_label": "Transport emission-factor proxy (pending validation)",
                     "confidence": confidence_level(min(transport_confidence, _as_float(step.get("confidence_prior"), 0.35))),
                 }
             )
@@ -500,6 +551,9 @@ def estimate_resources(route_steps: list[dict[str, str]], weight_g: int,
         )
 
     impact_totals = {key: round(totals[key], 3) for key in totals}
+    machine_tiers = [row.get("source_tier", "none") for row in machine_breakdown]
+    brochure_backed = sum(tier == "manufacturer" for tier in machine_tiers)
+    machine_proxies = len(machine_tiers) - brochure_backed
     return {
         "totals": impact_totals,
         "process_breakdown": process_breakdown,
@@ -508,5 +562,30 @@ def estimate_resources(route_steps: list[dict[str, str]], weight_g: int,
         "chemical_inventory": {
             chemical: round(value, 2)
             for chemical, value in sorted(chemical_inventory.items())
+        },
+        "impact_data_quality": {
+            "energy": {
+                "status": "Brochure-backed" if machine_tiers and not machine_proxies else "Proxy estimate",
+                "label": f"{brochure_backed}/{len(machine_tiers)} selected machine profiles are brochure-approved; remaining profiles are proxies.",
+                "brochure_backed_count": brochure_backed,
+                "proxy_count": machine_proxies,
+            },
+            "water": {
+                "status": "Modelled proxy" if water_proxy_processes else "No water model applied",
+                "label": "Water is estimated from industry process-intensity models, not primary facility meter data."
+                if water_proxy_processes else "No route step had a water-intensity model.",
+                "proxy_processes": water_proxy_processes,
+            },
+            "chemicals": {
+                "status": "Emission-factor proxy" if chemical_inventory else "No chemical model applied",
+                "label": "Chemical quantities use modelled dosage and pending-validation embodied emission factors."
+                if chemical_inventory else "No route step had a chemical dosage model.",
+                "chemical_count": len(chemical_inventory),
+            },
+            "transport": {
+                "status": "Freight proxy" if totals["transport_carbon_kgco2e"] else "No transport leg modelled",
+                "label": "Transport uses GLEC freight proxy factors and route/default distances, pending primary logistics data."
+                if totals["transport_carbon_kgco2e"] else "No transport leg was modelled for this route.",
+            },
         },
     }

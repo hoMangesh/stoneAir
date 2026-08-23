@@ -485,7 +485,7 @@ async def analyze_product(
     )
     classification = classify_product(signals, domain=domain_id)
     taxonomy = classification["taxonomy"]
-    template_match = match_template(str(taxonomy["taxonomy_id"]), signals)
+    template_match = match_template(str(taxonomy["taxonomy_id"]), signals, domain=domain_id)
     template = template_match["template"]
     # Composite routing: derive the route from (product type × material composition ×
     # origin) rather than taxonomy-id alone. The resolver scores the routes that cover
@@ -493,15 +493,19 @@ async def analyze_product(
     # and origin (material_origins), and falls back to the template's default_route_id
     # when nothing more specific wins. Identical signature -> identical route (memoized).
     composite_route = resolve_route(str(taxonomy["taxonomy_id"]), signals,
-                                    default_route_id=str(template["default_route_id"]))
+                                    default_route_id=str(template["default_route_id"]), domain=domain_id)
     route = reconstruct_route(composite_route["route_id"])
     # Origin-of-processes: thread the resolved BOM origin into resource_models so the
     # farming/agro steps use the real material origin's grid factor + transport legs
     # instead of the route's hardcoded default_country (the "tentative origin" gap).
-    origin_context = resolve_origin_context(signals)
-    resources = estimate_resources(route["steps"], int(template_match["resolved_weight_g"]),
-                                   origin_context=origin_context)
-    report = build_report(classification, template_match, route, resources)
+    origin_context = resolve_origin_context(signals, domain=domain_id)
+    resources = estimate_resources(
+        route["steps"],
+        int(template_match["resolved_weight_g"]),
+        origin_context=origin_context,
+        domain=domain_id,
+    )
+    report = build_report(classification, template_match, route, resources, domain=domain_id)
 
     # Step 4b: live machine-energy discovery. Off by default so the fast path
     # stays fast and never hits the network; opt in with enrich_machines=true.

@@ -104,6 +104,29 @@ class CarbonModel(Protocol):
         ...
 
 
+@runtime_checkable
+class ProductIntelligence(Protocol):
+    """Classify a domain product and match it to a domain template."""
+
+    def classify(self, *, signals: Any, repos: Any = None) -> dict[str, Any]: ...
+    def match_template(self, *, taxonomy_id: str, signals: Any, repos: Any = None) -> dict[str, Any]: ...
+
+
+@runtime_checkable
+class RouteResolver(Protocol):
+    """Resolve a domain route and the origin context required to evaluate it."""
+
+    def resolve(self, *, taxonomy_id: str, signals: Any, default_route_id: str | None, repos: Any = None) -> dict[str, Any]: ...
+    def resolve_origin_context(self, *, signals: Any, repos: Any = None) -> dict[str, Any] | None: ...
+
+
+@runtime_checkable
+class ReportBuilder(Protocol):
+    """Build the public report shape for a domain analysis."""
+
+    def build(self, *, classification: dict[str, Any], template_match: dict[str, Any], route: dict[str, Any], resources: dict[str, Any]) -> dict[str, Any]: ...
+
+
 # ---------------------------------------------------------------------------
 # DomainPack — the one contract core depends on
 # ---------------------------------------------------------------------------
@@ -141,11 +164,17 @@ class DomainPack:
     # Knowledge stores + calc model:
     knowledge_repo_paths: KnowledgeRepoPaths
     carbon_model: CarbonModel
+    product_intelligence: ProductIntelligence
+    route_resolver: RouteResolver
+    report_builder: ReportBuilder
 
 
 __all__ = [
     "RegexPatterns",
     "KnowledgeRepoPaths",
     "CarbonModel",
+    "ProductIntelligence",
+    "RouteResolver",
+    "ReportBuilder",
     "DomainPack",
 ]

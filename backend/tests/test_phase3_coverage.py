@@ -225,3 +225,42 @@ def test_estimate_resources_thies_demo_seed_demoted_to_l5():
     for row in thies_rows:
         assert row["source_tier"] == TIER_DEMO_SEED
         assert row["confidence"]["percent"] <= 30.0  # L5 — the flagged demo seed
+
+
+def test_brochure_approved_machine_outranks_regional_proxy():
+    from app.services.resource_models import _rank_models_by_region
+
+    candidates = [
+        {"machine_model_id": "regional-proxy", "machine_category": "Sewing"},
+        {"machine_model_id": "brochure-approved", "machine_category": "Sewing"},
+    ]
+    profiles = {
+        "regional-proxy": {"approval_status": "Pending Validation", "source": "KG proxy"},
+        "brochure-approved": {"approval_status": "Brochure Approved", "source": "Brochure-derived: manufacturer PDF"},
+    }
+    ranked = _rank_models_by_region(
+        candidates,
+        "India",
+        {"India": {"Sewing": [{"machine_model_id": "regional-proxy"}]}},
+        profiles,
+    )
+    assert ranked[0]["machine_model_id"] == "brochure-approved"
+
+
+def test_resource_result_explicitly_labels_proxy_impact_categories():
+    from app.services.resource_models import estimate_resources
+
+    result = estimate_resources(
+        [{
+            "step_order": 1, "process_id": "P", "process_name": "Reactive Dyeing",
+            "process_group": "Wet", "default_country": "India", "default_machine_names": "",
+            "water_model_process": "Reactive Dyeing", "chemical_model_process": "Reactive Dyeing",
+            "transport_leg_after": "Export transport", "confidence_prior": "0.5", "kg_source_status": "Proxy",
+        }],
+        100,
+    )
+    quality = result["impact_data_quality"]
+    assert quality["energy"]["status"] == "Proxy estimate"
+    assert quality["water"]["status"] == "Modelled proxy"
+    assert quality["chemicals"]["status"] == "Emission-factor proxy"
+    assert quality["transport"]["status"] == "Freight proxy"

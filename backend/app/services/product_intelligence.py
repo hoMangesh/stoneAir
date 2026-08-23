@@ -4,6 +4,14 @@ from app.services.document_intelligence import DocumentSignals
 from app.services.knowledge_loader import load_knowledge_graph
 
 
+def _resolve_pack(domain: str | None):
+    from app.core.domain_registry import resolve
+    from domain_packs.bootstrap import bootstrap
+
+    bootstrap()
+    return resolve(domain)
+
+
 def _score_taxonomy_row(row: dict[str, str], signals: DocumentSignals) -> float:
     text = signals.source_text.lower()
     score = 0.0
@@ -42,7 +50,25 @@ def _score_taxonomy_row(row: dict[str, str], signals: DocumentSignals) -> float:
 
 
 def classify_product(signals: DocumentSignals, *, domain: str | None = None) -> dict[str, object]:
-    kg = load_knowledge_graph()
+    """Dispatch product classification to the selected domain pack."""
+    if domain:
+        # Preserve the original service-level taxonomy filtering behavior for a
+        # domain whose pack is not yet installed. HTTP entry points validate the
+        # named domain first; this compatibility path is for callers inspecting
+        # taxonomy coverage (e.g. Footwear) during migration.
+        from app.core.domain_registry import UnknownDomainError
+
+        try:
+            pack = _resolve_pack(domain)
+        except UnknownDomainError:
+            return _classify_product(signals, domain_id=domain.strip().lower())
+    else:
+        pack = _resolve_pack(None)
+    return pack.product_intelligence.classify(signals=signals)
+
+
+def _classify_product(signals: DocumentSignals, *, domain_id: str, repos: object = None) -> dict[str, object]:
+    kg = repos or load_knowledge_graph()
     # Multi-domain: restrict candidates to TAXONOMY rows whose ``level_1_domain``
     # matches the resolved domain's id (case-insensitive — taxonomy is Title-Case
     # "Apparel", the pack's domain_id is lowercase "apparel"). This finally USES
@@ -51,17 +77,9 @@ def classify_product(signals: DocumentSignals, *, domain: str | None = None) -> 
     # unfiltered behaviour (parity preserved). When an EV-battery taxonomy lands
     # under level_1_domain="EV Battery" with an ev_battery pack, the engine never
     # discusses apparel — it never sees cross-domain rows.
-    if domain is None:
-        from app.core.domain_registry import resolve
-        from domain_packs.bootstrap import bootstrap
-
-        bootstrap()
-        resolved_domain = resolve(None).domain_id
-    else:
-        resolved_domain = domain.strip().lower()
     domain_taxonomy = [
         row for row in kg["taxonomy"]
-        if (row.get("level_1_domain") or "").strip().lower() == resolved_domain
+        if (row.get("level_1_domain") or "").strip().lower() == domain_id
     ]
     # If filtering yields nothing (e.g. no taxonomy authored for this domain yet),
     # fall back to the full set rather than crashing — surfaced in the result so a
@@ -95,8 +113,14 @@ def classify_product(signals: DocumentSignals, *, domain: str | None = None) -> 
     }
 
 
-def match_template(taxonomy_id: str, signals: DocumentSignals) -> dict[str, object]:
-    kg = load_knowledge_graph()
+def match_template(taxonomy_id: str, signals: DocumentSignals, *, domain: str | None = None) -> dict[str, object]:
+    """Dispatch template selection to the selected domain pack."""
+    pack = _resolve_pack(domain)
+    return pack.product_intelligence.match_template(taxonomy_id=taxonomy_id, signals=signals)
+
+
+def _match_template(taxonomy_id: str, signals: DocumentSignals, *, repos: object = None) -> dict[str, object]:
+    kg = repos or load_knowledge_graph()
     candidates = [row for row in kg["templates"] if row["taxonomy_id"] == taxonomy_id]
     template = candidates[0] if candidates else kg["templates"][0]
 
@@ -111,4 +135,3 @@ def match_template(taxonomy_id: str, signals: DocumentSignals) -> dict[str, obje
         "resolved_gsm": gsm,
         "material_blend": signals.blend or template["material_blend_default"],
     }
-

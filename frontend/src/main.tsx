@@ -49,6 +49,7 @@ type MachineBreakdown = {
   datasheet_url: string;
   confidence: { label: string; score: number; percent: number };
   source: string;
+  source_tier?: string;
 };
 
 type ActivityTrace = {
@@ -65,8 +66,15 @@ type ActivityTrace = {
   carbon_kgco2e: number;
   source: string;
   approval_status: string;
+  source_tier?: string;
+  source_tier_label?: string;
   confidence: { label: string; score: number; percent: number };
 };
+
+type ImpactDataQuality = Record<
+  "energy" | "water" | "chemicals" | "transport",
+  { status: string; label: string; brochure_backed_count?: number; proxy_count?: number }
+>;
 
 type InferenceTrace = {
   summary: {
@@ -224,6 +232,7 @@ type Analysis = {
     transport_carbon_kgco2e: number;
     chemical_carbon_kgco2e: number;
   };
+  impact_data_quality?: ImpactDataQuality;
   dynamic_workflow: DynamicWorkflow | null;
   persisted: Persisted | null;
   process_breakdown: ProcessBreakdown[];
@@ -439,6 +448,7 @@ function ActivityTracePanel({ rows }: { rows: ActivityTrace[] }) {
               <th>Quantity</th>
               <th>Emission Factor</th>
               <th>Carbon</th>
+              <th>Evidence</th>
               <th>Approval</th>
             </tr>
           </thead>
@@ -458,11 +468,34 @@ function ActivityTracePanel({ rows }: { rows: ActivityTrace[] }) {
                   </span>
                 </td>
                 <td>{row.carbon_kgco2e.toFixed(4)} kgCO2e</td>
+                <td>{row.source_tier_label ?? row.source_tier ?? "Not classified"}</td>
                 <td>{row.approval_status}</td>
               </tr>
             ))}
           </tbody>
         </table>
+      </div>
+    </section>
+  );
+}
+
+function ImpactDataQualityPanel({ quality }: { quality?: ImpactDataQuality }) {
+  if (!quality) return null;
+  return (
+    <section className="panel quality-panel" aria-label="Impact data quality">
+      <div className="panel-heading">
+        <Gauge size={18} />
+        <h2>Impact Data Quality</h2>
+      </div>
+      <p>These figures are estimates. Each impact category shows whether it is backed by reviewed evidence or a proxy.</p>
+      <div className="quality-grid">
+        {Object.entries(quality).map(([category, detail]) => (
+          <article key={category} className={detail.status === "Brochure-backed" ? "quality-card verified" : "quality-card proxy"}>
+            <span>{category}</span>
+            <strong>{detail.status}</strong>
+            <small>{detail.label}</small>
+          </article>
+        ))}
       </div>
     </section>
   );
@@ -889,6 +922,8 @@ function App() {
                   icon={<Zap size={20} />}
                 />
               </div>
+
+              <ImpactDataQualityPanel quality={analysis.impact_data_quality} />
 
               {analysis.impact_breakdown && (
                 <section className="panel emission-breakdown" aria-label="Carbon emission breakdown">

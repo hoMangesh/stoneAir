@@ -2,6 +2,14 @@ from __future__ import annotations
 
 from typing import Optional
 
+
+def _resolve_pack(domain: str | None):
+    from app.core.domain_registry import resolve
+    from domain_packs.bootstrap import bootstrap
+
+    bootstrap()
+    return resolve(domain)
+
 # Confidence level thresholds per docs/Architecture.md:
 #   L1 Primary Data:      0.95 – 0.99
 #   L2 Supplier Data:     0.80 – 0.95
@@ -47,6 +55,24 @@ def _min_resource_confidence(resources: dict[str, object]) -> Optional[float]:
 
 
 def build_report(
+    classification: dict[str, object],
+    template_match: dict[str, object],
+    route: dict[str, object],
+    resources: dict[str, object],
+    *,
+    domain: str | None = None,
+) -> dict[str, object]:
+    """Dispatch public-report construction to the selected domain pack."""
+    pack = _resolve_pack(domain)
+    return pack.report_builder.build(
+        classification=classification,
+        template_match=template_match,
+        route=route,
+        resources=resources,
+    )
+
+
+def _build_report(
     classification: dict[str, object],
     template_match: dict[str, object],
     route: dict[str, object],
@@ -119,6 +145,7 @@ def build_report(
         "machine_breakdown": resources["machine_breakdown"],
         "activity_trace": resources["activity_trace"],
         "chemical_inventory": resources["chemical_inventory"],
+        "impact_data_quality": resources.get("impact_data_quality", {}),
         "digital_product_passport": {
             "product_type": taxonomy["level_4_product_type"],
             "route_id": route["route_id"],

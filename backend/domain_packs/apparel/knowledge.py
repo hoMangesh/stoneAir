@@ -245,6 +245,11 @@ def build_pack(*, carbon_model=None) -> DomainPack:
         from domain_packs.apparel.carbon_model import build_apparel_carbon_model
 
         carbon_model = build_apparel_carbon_model()
+    from domain_packs.apparel.intelligence import (
+        ApparelProductIntelligence,
+        ApparelReportBuilder,
+        ApparelRouteResolver,
+    )
     return DomainPack(
         domain_id="apparel",
         display_name="Clothing & Apparel",
@@ -258,6 +263,9 @@ def build_pack(*, carbon_model=None) -> DomainPack:
         chemical_factor_aliases=CHEMICAL_FACTOR_ALIASES,  # ← Step 2.1 (done)
         knowledge_repo_paths=_APPAREL_REPOS,
         carbon_model=carbon_model,                    # None until Step 3
+        product_intelligence=ApparelProductIntelligence(),
+        route_resolver=ApparelRouteResolver(ORIGIN_SENSITIVE_PROCESS_GROUPS),
+        report_builder=ApparelReportBuilder(),
     )
 
 

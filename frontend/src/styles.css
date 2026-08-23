@@ -475,6 +475,31 @@ dd {
   line-height: 1.45;
 }
 
+.quality-panel > p {
+  margin: 0 0 1rem;
+  color: var(--muted);
+}
+
+.quality-grid {
+  display: grid;
+  grid-template-columns: repeat(4, minmax(0, 1fr));
+  gap: 0.75rem;
+}
+
+.quality-card {
+  border: 1px solid var(--line);
+  border-left: 4px solid #d08b25;
+  border-radius: 10px;
+  padding: 0.8rem;
+  display: grid;
+  gap: 0.32rem;
+}
+
+.quality-card.verified { border-left-color: #25935b; }
+.quality-card span { color: var(--muted); text-transform: capitalize; font-size: 0.78rem; }
+.quality-card strong { font-size: 0.95rem; }
+.quality-card small { color: var(--muted); line-height: 1.35; }
+
 .process-panel {
   margin-top: 16px;
   padding: 0;
@@ -615,6 +640,7 @@ td span {
   }
 
   .metrics,
+  .quality-grid,
   .layer-map,
   .principle-strip,
   .candidate-grid {

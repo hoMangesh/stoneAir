@@ -161,6 +161,27 @@ def resolve_route(
     signals: DocumentSignals,
     *,
     default_route_id: str | None,
+    domain: str | None = None,
+) -> dict[str, object]:
+    """Dispatch route resolution to the selected domain pack."""
+    from app.core.domain_registry import resolve
+    from domain_packs.bootstrap import bootstrap
+
+    bootstrap()
+    pack = resolve(domain)
+    return pack.route_resolver.resolve(
+        taxonomy_id=taxonomy_id,
+        signals=signals,
+        default_route_id=default_route_id,
+    )
+
+
+def _resolve_route(
+    taxonomy_id: str,
+    signals: DocumentSignals,
+    *,
+    default_route_id: str | None,
+    repos: object = None,
 ) -> dict[str, object]:
     """Pick the best route_id for this BOM's (product × composition × origin).
 
@@ -223,7 +244,21 @@ def _resolve_signature(sig: tuple, taxonomy_id: str, default_route_id: str) -> d
             "candidates_seen": len(scored)}
 
 
-def resolve_origin_context(signals: DocumentSignals) -> dict[str, object] | None:
+def resolve_origin_context(signals: DocumentSignals, *, domain: str | None = None) -> dict[str, object] | None:
+    """Dispatch origin resolution to the selected domain pack."""
+    from app.core.domain_registry import resolve
+    from domain_packs.bootstrap import bootstrap
+
+    bootstrap()
+    return resolve(domain).route_resolver.resolve_origin_context(signals=signals)
+
+
+def _resolve_origin_context(
+    signals: DocumentSignals,
+    *,
+    repos: object = None,
+    origin_sensitive_process_groups: set[str],
+) -> dict[str, object] | None:
     """Resolve the BOM origin so resource_models can inject it into origin-sensitive
     steps (farming/agro) without re-deriving it. Returns None when nothing known.
     """
@@ -237,4 +272,4 @@ def resolve_origin_context(signals: DocumentSignals) -> dict[str, object] | None
                              master.get("material_origins_by_material"), materials_by_name)
     if not origin:
         return None
-    return {"origin": origin, "process_groups": _resolve_pack().origin_sensitive_process_groups}
+    return {"origin": origin, "process_groups": origin_sensitive_process_groups}

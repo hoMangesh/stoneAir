@@ -55,17 +55,21 @@ class ApparelCarbonModel:
     process_energy_fallback_kwh_per_kg: dict[str, float]
 
     def evaluate(self, *, route_steps, weight_g, origin_context=None, repos=None):
-        """Placeholder for the future generic-engine dispatch.
+        """Evaluate apparel activity data through the shared calculation machinery."""
+        from app.services.resource_models import evaluate_with_activity_model
+        from domain_packs.apparel import pack
 
-        Today the core engine (`estimate_resources`) reads this model's
-        attributes directly; a subsequent workstream replaces that with a
-        generic ``app.core.carbon_engine`` calling this method. Intentionally
-        unused now — defined so the model satisfies the ``CarbonModel``
-        Protocol's shape and the contract stays honest.
-        """
-        raise NotImplementedError(
-            "ApparelCarbonModel.evaluate is deferred to the carbon-engine split; "
-            "the core engine reads this model's attributes today."
+        if repos is None:
+            from app.services.knowledge_loader import load_master_data
+
+            repos = load_master_data(pack)
+        return evaluate_with_activity_model(
+            carbon_model=self,
+            route_steps=route_steps,
+            weight_g=weight_g,
+            origin_context=origin_context,
+            repos=repos,
+            pack=pack,
         )
 
 
