@@ -215,24 +215,13 @@ def _extract_text_from_csv(raw: bytes) -> str | None:
         return None
 
 
-def _extract_text_from_bytes(uploaded_file) -> str:
-    """Extract text from an uploaded file object (FastAPI UploadFile).
+def _extract_text_from_raw(raw: bytes, filename: str = "") -> str:
+    """Extract text from raw upload bytes using a filename format hint.
 
-    Returns '' when the format is unsupported or parsing fails; the caller treats
-    empty text as a no-op. The filename hint is appended so keyword detection can
-    still surface a product type even from binary files we cannot parse.
+    Parsing is deliberately synchronous and side-effect-free. Async file I/O
+    belongs in :func:`extract_text_from_upload` at the HTTP boundary.
     """
-    name = (getattr(uploaded_file, "filename", "") or "").lower()
-    try:
-        raw = uploaded_file.read()
-    except Exception:
-        return ""
-    finally:
-        # Rewind so downstream consumers can still read the bytes if needed.
-        try:
-            uploaded_file.seek(0)
-        except Exception:
-            pass
+    name = filename.lower()
 
     text: str | None = None
     if name.endswith(".pdf") or raw[:4] == b"%PDF":
@@ -251,11 +240,25 @@ def _extract_text_from_bytes(uploaded_file) -> str:
     return f"{text}\n{fallback}".strip() if text else fallback
 
 
+async def extract_text_from_upload(uploaded_file) -> str:
+    """Read a FastAPI ``UploadFile`` asynchronously, then parse its bytes."""
+    try:
+        raw = await uploaded_file.read()
+    except Exception:
+        return ""
+    finally:
+        try:
+            await uploaded_file.seek(0)
+        except Exception:
+            pass
+    return _extract_text_from_raw(raw, getattr(uploaded_file, "filename", "") or "")
+
+
 # ---------------------------------------------------------------------------
 # Public entry points
 # ---------------------------------------------------------------------------
 
-def extract_text_from_uploads(uploaded_files: list) -> list[str]:
+async def extract_text_from_uploads(uploaded_files: list) -> list[str]:
     """Parse each UploadFile into extracted text. Kept for callers that want
     to inspect raw upload content before signal extraction.
 
@@ -265,7 +268,7 @@ def extract_text_from_uploads(uploaded_files: list) -> list[str]:
     if not uploaded_files:
         return []
     try:
-        return [_extract_text_from_bytes(uploaded_file) for uploaded_file in uploaded_files]
+        return [await extract_text_from_upload(uploaded_file) for uploaded_file in uploaded_files]
     except TypeError:
         return []
 

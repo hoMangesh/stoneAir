@@ -8,7 +8,7 @@ from fastapi.middleware.cors import CORSMiddleware
 from app.services.document_intelligence import (
     extract_document_signals,
     extract_text_from_uploads,
-    _extract_text_from_bytes,
+    extract_text_from_upload,
 )
 from app.services.brochure_pipeline import (
     brochure_review_summary,
@@ -246,7 +246,7 @@ async def brochure_review_extract(
     pieces: list[str] = [brochure_text]
     if file is not None:
         source = file.filename or "uploaded_file"
-        pieces.append(_extract_text_from_bytes(file))
+        pieces.append(await extract_text_from_upload(file))
     return extract_brochure(machine_model_id, "\n".join(p for p in pieces if p), source)
 
 
@@ -482,7 +482,7 @@ async def analyze_product(
 
     # Parse uploaded tech packs (PDF/Excel/CSV) into text rather than just
     # decoding bytes — extracts real BOM signals where the format supports it.
-    uploaded_texts = extract_text_from_uploads(files)
+    uploaded_texts = await extract_text_from_uploads(files)
 
     signals = extract_document_signals(
         product_description,
