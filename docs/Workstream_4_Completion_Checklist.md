@@ -9,4 +9,6 @@
 - [x] AI interpretation boundary prohibits new knowledge and provider inference.
 - [x] Twin lifecycle and sequence diagrams are documented.
 - [x] Existing `/api/analyze` and domain pack boundaries remain unchanged.
-- [ ] Full regression and golden snapshot gate.
+- [x] Full regression: 120 passed.
+- [x] Apparel golden snapshot: byte-identical to baseline.
+- [x] Generic core import boundary scan and Python compilation pass.
