@@ -1,0 +1,5 @@
+extraction_id,machine_model_id,brochure_id,field_name,raw_value,normalized_value,unit,page_or_section,extraction_method,confidence,version,effective_date,expiry_date,source,approval_status
+MEXT-SEED-001,MMOD001,MBR001,electricity,TBD,TBD,kWh/kg fabric,,Pending brochure extraction,0.0,0.1,2026-06-17,,Seed only,Pending Brochure Review
+MEXT-SEED-002,MMOD002,MBR002,electricity,TBD,TBD,kWh/kg fabric,,Pending brochure extraction,0.0,0.1,2026-06-17,,Seed only,Pending Brochure Review
+MEXT-SEED-003,MMOD003,MBR003,electricity,TBD,TBD,kWh/kg yarn,,Pending brochure extraction,0.0,0.1,2026-06-17,,Seed only,Pending Brochure Review
+MEXT-SEED-004,MMOD004,MBR004,electricity,TBD,TBD,kWh/garment,,Pending datasheet extraction,0.0,0.1,2026-06-17,,Seed only,Pending Brochure Review

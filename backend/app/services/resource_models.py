@@ -1,0 +1,591 @@
+from __future__ import annotations
+
+from typing import TYPE_CHECKING
+
+from app.services.knowledge_loader import confidence_level, load_master_data
+from app.services.source_tier import adjust_activity_confidence, source_tier_from_profile
+
+if TYPE_CHECKING:
+    from app.core.contracts import DomainPack
+
+
+# ---------------------------------------------------------------------------
+# All apparel calc knowledge (water/chemical/process-fallback dosage, transport
+# hints, export defaults, origin-sensitive groups, material aliases, chemical
+# aliases) now lives in the resolved domain pack (apparel), reached through
+# _resolve_pack(). This core module holds NO industry values. The apparel
+# calc-model dicts (water L/kg, chemical g/kg, process-energy kWh/kg) ride on
+# pack.carbon_model — see domain_packs/apparel/carbon_model.py.
+# ---------------------------------------------------------------------------
+
+
+# Cross-cutting transport/export values (was _TRANSPORT_MODE_HINTS,
+# DEFAULT_EXPORT_DISTANCE_KM, DEFAULT_EXPORT_MODE) and the origin-sensitive
+# process groups (was _ORIGIN_SENSITIVE_PROCESS_GROUPS) now live in the resolved
+# domain pack; resolve() lazily fetches them so core holds no apparel values.
+# See _resolve_pack() below — keep this import-free at module load (no cycle).
+
+
+def _resolve_pack():
+    """Resolve the default domain pack (apparel) for cross-cutting rules.
+
+    Lazily bootstraps the registered packs first so ``resolve`` succeeds on the
+    first call from any code path. This is the only place ``resource_models``
+    touches the registry; it returns the pack whose ``transport_mode_hints``,
+    ``default_export_*`` and ``origin_sensitive_process_groups`` drive the
+    generic transport + origin logic. The apparel carbon *model* (water/
+    chemical/process-fallback) moves to the pack in Step 3.
+    """
+    from domain_packs.bootstrap import bootstrap
+
+    bootstrap()
+    from app.core.domain_registry import resolve
+
+    return resolve(None)
+
+
+def _as_float(value: str | None, default: float = 0.0) -> float:
+    if value in (None, ""):
+        return default
+    try:
+        return float(value)
+    except ValueError:
+        return default
+
+
+def _split_pipe(value: str | None) -> list[str]:
+    if not value:
+        return []
+    return [item.strip() for item in value.split("|") if item.strip()]
+
+
+def _activity_quantity(unit: str, rate: float, weight_kg: float) -> float:
+    if unit == "kWh/garment":
+        return rate
+    if "/kg" in unit:
+        return rate * weight_kg
+    return rate * weight_kg
+
+
+# Origin-sensitive process groups now live in the resolved pack (was the
+# module-level set here, mirrored in route_resolution in Step 2.4). Pulled via
+# _resolve_pack() so this core module holds no apparel process-name values.
+
+
+def _canonical_country(name: str, master_data: dict[str, object] | None) -> str:
+    """Normalize a country name to the masters' Title-Case key where possible.
+
+    BOM origins arrive from document_intelligence already lowercased ("india"),
+    but the masters index emission_factors / transport_routes / region_machine_rank
+    by Title-Case names ("India"). Lowercasing both sides of a comparison hides the
+    mismatch in route_resolution, but resource_models does direct ``.get(country)``
+    lookups — so a raw lowercase origin would miss and silently fall to Default.
+    Resolve through the case-insensitive country index instead. Anything not in the
+    master (a free-form origin, or "Default") is returned untouched so downstream's
+    own fallback handling still applies.
+    """
+    if not name or not master_data:
+        return name
+    ci = master_data.get("countries_by_name_ci") or {}
+    hit = ci.get(name.strip().lower())
+    return (hit.get("country_name") or name) if hit else name
+
+
+def _step_country(step: dict[str, str], origin_context: dict[str, object] | None,
+                  master_data: dict[str, object] | None = None,
+                  pack: "DomainPack | None" = None) -> str:
+    """Resolve a step's country, injecting the BOM origin for origin-sensitive groups.
+
+    Without an origin_context (or for non-origin-sensitive steps) this returns the
+    route's reviewed ``default_country`` — unchanged behaviour, no regression.
+    With an origin_context for a farming/agro step, the BOM's origin wins so the
+    grid factor and transport legs follow the real material origin, not the
+    route's pre-filled default (the "origin is tentative" gap this closes). The
+    origin is canonicalized to the masters' Title-Case country key so downstream
+    ``.get(country)`` lookups (emission factors, transport legs, region machine
+    rank) actually hit instead of falling to Default on a casing mismatch.
+
+    ``pack`` carries the origin-sensitive process groups (apparel fact); resolved
+    lazily when omitted so existing call sites keep working during the Step 2/3
+    transition.
+    """
+    route_default = step.get("default_country") or "Default"
+    if not origin_context:
+        return route_default
+    groups = origin_context.get("process_groups") or (pack or _resolve_pack()).origin_sensitive_process_groups
+    if (step.get("process_group") or "").strip() in groups:
+        origin = (origin_context.get("origin") or "").strip()
+        if origin:
+            return _canonical_country(origin, master_data)
+    return route_default
+
+
+def _select_machine_records(step: dict[str, str], master_data: dict[str, object],
+                             origin_context: dict[str, object] | None = None,
+                             pack: "DomainPack | None" = None) -> list[dict[str, str]]:
+    """Pick the machine model(s) for a step.
+
+    Region-prioritized: among models in the parked machine category, prefer the
+    model most commonly installed in the step's country (factory_machine_map),
+    because the same process is run on different machines by region. Falls back
+    to category-default ordering when no regional install data exists. Only
+    models that have a machine energy profile can contribute energy/carbon.
+    """
+    machine_models_by_category = master_data["machine_models_by_category"]
+    machine_energy_by_model = master_data["machine_energy_by_model"]
+    region_machine_rank = master_data.get("region_machine_rank", {})
+    country = _step_country(step, origin_context, master_data, pack)
+    selected: list[dict[str, str]] = []
+
+    for machine_name in _split_pipe(step.get("default_machine_names")):
+        candidates = list(machine_models_by_category.get(machine_name, []))
+        if not candidates:
+            continue
+        ranked = _rank_models_by_region(candidates, country, region_machine_rank, machine_energy_by_model)
+        for model in ranked:
+            energy_profile = machine_energy_by_model.get(model["machine_model_id"])
+            if energy_profile:
+                selected.append({"machine_name": machine_name, **model, **energy_profile})
+                break
+    return selected
+
+
+def _rank_models_by_region(
+    candidates: list[dict[str, str]], country: str, region_rank: dict,
+    energy_by_model: dict[str, dict[str, str]] | None = None,
+) -> list[dict[str, str]]:
+    """Rank machine models by install quantity in the step's country.
+
+    Models installed in the region (highest quantity first) come first; the rest
+    keep their original order as fallback. This encodes 'machine model usually
+    used in that geographical region'.
+    """
+    if not candidates:
+        return candidates
+    category = candidates[0].get("machine_category", "")
+    preferred = [entry["machine_model_id"] for entry in region_rank.get(country, {}).get(category, [])]
+    energy_by_model = energy_by_model or {}
+
+    def source_priority(model: dict[str, str]) -> int:
+        tier = source_tier_from_profile(
+            energy_by_model.get(model.get("machine_model_id", "")),
+            category=model.get("machine_category", ""),
+        ).tier
+        # Preserve the established regional/default ranking for all non-approved
+        # records. The policy change is deliberately narrow: only reviewed
+        # manufacturer evidence displaces the existing selection.
+        return 0 if tier == "manufacturer" else 1
+
+    # Brochure-approved evidence outranks a regional proxy. Regional installation
+    # remains the tie-breaker for models with the same evidence quality.
+    return sorted(
+        candidates,
+        key=lambda model: (
+            source_priority(model),
+            preferred.index(model["machine_model_id"])
+            if model["machine_model_id"] in preferred else len(preferred),
+        ),
+    )
+
+
+def _electricity_factor(country: str, master_data: dict[str, object]) -> dict[str, str]:
+    emission_factors_by_country = master_data["emission_factors_by_country"]
+    return emission_factors_by_country.get(country) or emission_factors_by_country.get("Default", {})
+
+
+def _chemical_factor(chemical_name: str, master_data: dict[str, object]) -> dict[str, str]:
+    factors = master_data.get("chemical_emission_factors_by_name", {})
+    return factors.get(chemical_name) or factors.get(chemical_name.strip().title(), {})
+
+
+def _transport_factor(mode: str, master_data: dict[str, object],
+                       pack: "DomainPack | None" = None) -> tuple[float, str, float]:
+    """Return (factor, factor_id, confidence) for a transport mode.
+
+    Falls back to the pack's default export mode when ``mode`` is unknown
+    (apparel fact, was the module-level``DEFAULT_EXPORT_MODE`` constant).
+    """
+    default_export_mode = (pack or _resolve_pack()).default_export_mode
+    by_mode = master_data.get("transport_factors_by_mode", {})
+    record = by_mode.get(mode) or by_mode.get(default_export_mode, {})
+    return (
+        _as_float(record.get("factor")),
+        record.get("transport_id", "EF-TRANS-DEF-2026"),
+        _as_float(record.get("confidence"), 0.25),
+    )
+
+
+def _resolve_transport_leg(
+    step: dict[str, str],
+    route_steps: list[dict[str, str]],
+    index: int,
+    master_data: dict[str, object],
+    origin_context: dict[str, object] | None = None,
+    pack: "DomainPack | None" = None,
+) -> dict[str, object] | None:
+    """Turn a route step's `transport_leg_after` prose into an emissions row.
+
+    Origin = this step's country (origin-aware: a farming/agro step uses the
+    BOM's declared material origin, not the route's hardcoded default).
+    Destination = next step's country if available, else a default export hub.
+    Distance/mode come from transport_routes.csv when the (origin, destination)
+    leg is known, else the default export distance.
+
+    The mode-hint table + export defaults are apparel facts carried by the
+    resolved ``pack`` (were module-level constants here). Threaded via ``pack``
+    so this core helper holds no industry values.
+    """
+    leg_phrase = (step.get("transport_leg_after") or "").strip().lower()
+    if not leg_phrase or leg_phrase == "none":
+        return None
+
+    pack = pack or _resolve_pack()
+    transport_mode_hints = pack.transport_mode_hints
+    default_export_distance_km = pack.default_export_distance_km
+    default_export_mode = pack.default_export_mode
+
+    route_ids_by_leg = master_data.get("transport_routes_by_leg", {})
+    origin_country = _step_country(step, origin_context, master_data, pack).strip()
+    next_step = route_steps[index + 1] if index + 1 < len(route_steps) else None
+    destination_country = (_step_country(next_step, origin_context, master_data, pack) if next_step else "").strip() or "United States"
+
+    chosen_mode = default_export_mode
+    for needle, mode in transport_mode_hints:
+        if needle in leg_phrase:
+            chosen_mode = mode
+            break
+
+    leg_record = route_ids_by_leg.get(f"{origin_country}|{destination_country}")
+    distance_km = _as_float(leg_record.get("distance")) if leg_record else 0.0
+    if leg_record:
+        chosen_mode = leg_record.get("mode", chosen_mode) or chosen_mode
+    if not distance_km:
+        # "Export transport" or unmapped leg -> assume the long export haul.
+        distance_km = default_export_distance_km
+        if "export" in leg_phrase:
+            chosen_mode = default_export_mode
+
+    return {
+        "origin": origin_country or "Default",
+        "destination": destination_country or "United States",
+        "mode": chosen_mode,
+        "distance_km": distance_km,
+    }
+
+
+def estimate_resources(
+    route_steps: list[dict[str, str]],
+    weight_g: int,
+    origin_context: dict[str, object] | None = None,
+    domain: str | None = None,
+) -> dict[str, object]:
+    """Evaluate a route through the requested domain pack's carbon model."""
+    from app.core.carbon_engine import evaluate
+    from app.core.domain_registry import resolve
+
+    pack = _resolve_pack() if not domain else resolve(domain)
+    return evaluate(
+        pack=pack,
+        route_steps=route_steps,
+        weight_g=weight_g,
+        origin_context=origin_context,
+        repos=load_master_data(pack),
+    )
+
+
+def evaluate_with_activity_model(
+    *,
+    carbon_model: object,
+    route_steps: list[dict[str, str]],
+    weight_g: int,
+    origin_context: dict[str, object] | None = None,
+    repos: dict[str, object],
+    pack: "DomainPack",
+) -> dict[str, object]:
+    """Shared activity-data calculation machinery used by a domain model.
+
+    This code contains only mechanics: mass balance, factor-times-activity
+    aggregation, transport handling, and the common response schema.  The
+    supplied model owns all domain values and rules.
+    """
+    master_data = repos
+    final_weight_kg = max(weight_g / 1000, 0.01)
+    yield_by_process = master_data.get("yield_model_by_process", {})
+
+    # Mass-balance: walk the route upstream applying each step's yield so earlier
+    # steps (farming, spinning) process more material than the final garment mass.
+    # We compute a per-step "material_mass_kg" from the final garment backward.
+    step_mass_kg: list[float] = [final_weight_kg] * len(route_steps)
+    working_mass = final_weight_kg
+    for index in range(len(route_steps) - 1, -1, -1):
+        step = route_steps[index]
+        process_name = step.get("process_name", "")
+        step_yield = yield_by_process.get(process_name, {})
+        yield_pct = _as_float(step_yield.get("yield_percent"), None) if step_yield else None
+        if yield_pct and 0 < yield_pct < 100:
+            # This step's output is `working_mass`; its input had to be larger.
+            step_mass_kg[index] = working_mass / (yield_pct / 100.0)
+            working_mass = step_mass_kg[index]
+        else:
+            step_mass_kg[index] = working_mass
+
+    process_breakdown: list[dict[str, object]] = []
+    machine_breakdown: list[dict[str, object]] = []
+    activity_trace: list[dict[str, object]] = []
+    chemical_inventory: dict[str, float] = {}
+    water_proxy_processes: list[str] = []
+    totals = {
+        "energy_kwh": 0.0,
+        "water_l": 0.0,
+        "carbon_kgco2e": 0.0,
+        "transport_carbon_kgco2e": 0.0,
+        "chemical_carbon_kgco2e": 0.0,
+    }
+
+    for index, step in enumerate(route_steps):
+        step_energy_kwh = 0.0
+        step_water_l = 0.0
+        step_carbon = 0.0
+        step_mass = step_mass_kg[index]
+        # Origin-sensitive steps (farming/agro) use the BOM origin's grid; the
+        # rest keep the route default. Same helper the machine selection uses.
+        country = _step_country(step, origin_context, master_data, pack)
+        factor_record = _electricity_factor(country, master_data)
+        factor = _as_float(factor_record.get("factor"), 0.55)
+        factor_confidence = _as_float(factor_record.get("confidence"), 0.35)
+        factor_id = factor_record.get("factor_id", "EF-ELEC-DEF-2026")
+        machine_records = _select_machine_records(step, master_data, origin_context, pack)
+
+        for machine in machine_records:
+            electricity_rate = _as_float(machine.get("electricity"))
+            electricity_kwh = _activity_quantity(machine.get("unit", ""), electricity_rate, step_mass)
+            machine_water_l = _activity_quantity("L/kg", _as_float(machine.get("water")), step_mass)
+            carbon = electricity_kwh * factor
+            machine_confidence = _as_float(machine.get("confidence"), 0.35)
+            activity_confidence = min(machine_confidence, factor_confidence, _as_float(step.get("confidence_prior"), 0.35))
+
+            # Phase 3 — tier-aware confidence: a derivation is only as good as its
+            # source tier. Read the persisted energy profile's approval/source and
+            # adjust the activity confidence + label its evidence tier. Works fully
+            # offline (reads the profile row already merged into `machine`).
+            tier = source_tier_from_profile(machine, category=machine.get("machine_category", ""))
+            activity_confidence, tier_label = adjust_activity_confidence(activity_confidence, tier)
+
+            step_energy_kwh += electricity_kwh
+            step_water_l += machine_water_l
+            step_carbon += carbon
+            totals["energy_kwh"] += electricity_kwh
+            totals["water_l"] += machine_water_l
+            totals["carbon_kgco2e"] += carbon
+
+            activity = {
+                "activity_type": "Electricity",
+                "process_name": step["process_name"],
+                "machine_model_id": machine["machine_model_id"],
+                "machine_model": f"{machine['manufacturer']} {machine['model']}",
+                "machine_category": machine["machine_category"],
+                "activity_quantity": round(electricity_kwh, 4),
+                "activity_unit": "kWh",
+                "factor_id": factor_id,
+                "factor": factor,
+                "factor_unit": factor_record.get("unit", "kgCO2e/kWh"),
+                "carbon_kgco2e": round(carbon, 4),
+                "source": machine.get("source", ""),
+                "approval_status": machine.get("approval_status", ""),
+                "source_tier": tier.tier,
+                "source_tier_label": tier_label,
+                "confidence": confidence_level(activity_confidence),
+            }
+            activity_trace.append(activity)
+            machine_breakdown.append(
+                {
+                    "step_order": step["step_order"],
+                    "process_name": step["process_name"],
+                    "machine_category": machine["machine_category"],
+                    "machine_model_id": machine["machine_model_id"],
+                    "machine_model": activity["machine_model"],
+                    "unit": machine.get("unit", ""),
+                    "electricity_rate": electricity_rate,
+                    "electricity_kwh": round(electricity_kwh, 4),
+                    "water_l": round(machine_water_l, 2),
+                    "brochure_url": machine.get("brochure_url", ""),
+                    "datasheet_url": machine.get("datasheet_url", ""),
+                    "source_tier": tier.tier,
+                    "confidence": activity["confidence"],
+                    "source": machine.get("source", ""),
+                }
+            )
+
+        water_process = step.get("water_model_process", "")
+        if water_process in carbon_model.water_model_l_per_kg:
+            water_l = carbon_model.water_model_l_per_kg[water_process] * step_mass
+            step_water_l += water_l
+            totals["water_l"] += water_l
+            water_proxy_processes.append(step["process_name"])
+
+        # Process-level fallback: if no machine energy profile resolved for this
+        # step, the route still names it energy-intensive. Use a process-level
+        # kWh/kg proxy so the step is not silently zero-carbon. Low confidence.
+        if not machine_records and step["process_name"] in carbon_model.process_energy_fallback_kwh_per_kg:
+            fallback_rate = carbon_model.process_energy_fallback_kwh_per_kg[step["process_name"]]
+            fallback_kwh = fallback_rate * step_mass
+            fallback_carbon = fallback_kwh * factor
+            activity_confidence = min(0.3, factor_confidence, _as_float(step.get("confidence_prior"), 0.35))
+            step_energy_kwh += fallback_kwh
+            step_carbon += fallback_carbon
+            totals["energy_kwh"] += fallback_kwh
+            totals["carbon_kgco2e"] += fallback_carbon
+            activity_trace.append(
+                {
+                    "activity_type": "Electricity",
+                    "process_name": step["process_name"],
+                    "machine_model_id": "FALLBACK",
+                    "machine_model": f"{step['process_name']} (process-level proxy)",
+                    "machine_category": "Process Fallback",
+                    "activity_quantity": round(fallback_kwh, 4),
+                    "activity_unit": "kWh",
+                    "factor_id": factor_id,
+                    "factor": factor,
+                    "factor_unit": factor_record.get("unit", "kgCO2e/kWh"),
+                    "carbon_kgco2e": round(fallback_carbon, 4),
+                    "source": "Process-level energy proxy (no machine energy profile yet)",
+                    "approval_status": "Fallback Logic",
+                    "source_tier": "fallback",
+                    "source_tier_label": "Process-level industry proxy",
+                    "confidence": confidence_level(activity_confidence),
+                }
+            )
+
+        # Chemicals -> dosage (g/kg) from the code model, embodied carbon from the
+        # chemical emission-factor master. Each chemical in a wet-processing step
+        # produces one activity row so its footprint is traceable.
+        chemical_process = step.get("chemical_model_process", "")
+        chemical_carbon_step = 0.0
+        for chemical, dosage in carbon_model.chemical_model_g_per_kg.get(chemical_process, {}).items():
+            grams = dosage * step_mass
+            chemical_inventory[chemical] = chemical_inventory.get(chemical, 0.0) + grams
+            chem_factor_record = _chemical_factor(chemical, master_data)
+            chem_factor = _as_float(chem_factor_record.get("factor"), 0.0)
+            if chem_factor and grams > 0:
+                chem_carbon = (grams / 1000.0) * chem_factor  # kgCO2e
+                chem_confidence = _as_float(chem_factor_record.get("confidence"), 0.3)
+                activity_confidence = min(chem_confidence, _as_float(step.get("confidence_prior"), 0.35))
+                activity_trace.append(
+                    {
+                        "activity_type": "Chemical",
+                        "process_name": step["process_name"],
+                        "machine_model_id": chem_factor_record.get("factor_id", ""),
+                        "machine_model": chemical,
+                        "machine_category": "Chemical",
+                        "activity_quantity": round(grams / 1000.0, 4),
+                        "activity_unit": "kg",
+                        "factor_id": chem_factor_record.get("factor_id", "EF-CHEM-DEF"),
+                        "factor": chem_factor,
+                        "factor_unit": chem_factor_record.get("unit", "kgCO2e/kg"),
+                        "carbon_kgco2e": round(chem_carbon, 4),
+                        "source": chem_factor_record.get("source", ""),
+                        "approval_status": chem_factor_record.get("approval_status", ""),
+                        "source_tier": "proxy",
+                        "source_tier_label": "Emission-factor proxy (pending validation)",
+                        "confidence": confidence_level(activity_confidence),
+                    }
+                )
+                chemical_carbon_step += chem_carbon
+        totals["chemical_carbon_kgco2e"] += chemical_carbon_step
+        totals["carbon_kgco2e"] += chemical_carbon_step
+        step_carbon += chemical_carbon_step
+
+        # Transport leg after this step.
+        leg = _resolve_transport_leg(step, route_steps, index, master_data, origin_context, pack)
+        if leg:
+            transport_factor, transport_factor_id, transport_confidence = _transport_factor(leg["mode"], master_data, pack)
+            # ton-km = product mass (tons) * distance. Use final garment mass for
+            # the export leg; intra-route legs move semi-finished material.
+            ton_km = (final_weight_kg / 1000.0) * leg["distance_km"]
+            transport_carbon = ton_km * transport_factor
+            totals["transport_carbon_kgco2e"] += transport_carbon
+            totals["carbon_kgco2e"] += transport_carbon
+            step_carbon += transport_carbon
+            activity_trace.append(
+                {
+                    "activity_type": "Transport",
+                    "process_name": step["process_name"],
+                    "machine_model_id": transport_factor_id,
+                    "machine_model": f"{leg['mode']} {leg['origin']} -> {leg['destination']}",
+                    "machine_category": "Transport",
+                    "activity_quantity": round(ton_km, 2),
+                    "activity_unit": "ton-km",
+                    "factor_id": transport_factor_id,
+                    "factor": transport_factor,
+                    "factor_unit": "kgCO2e/ton-km",
+                    "carbon_kgco2e": round(transport_carbon, 5),
+                    "source": "GLEC freight proxy",
+                    "approval_status": "Pending Validation",
+                    "source_tier": "proxy",
+                    "source_tier_label": "Transport emission-factor proxy (pending validation)",
+                    "confidence": confidence_level(min(transport_confidence, _as_float(step.get("confidence_prior"), 0.35))),
+                }
+            )
+
+        process_steps = master_data["process_steps_by_process"].get(step.get("process_id", ""), [])
+        process_breakdown.append(
+            {
+                "step_order": step["step_order"],
+                "process_id": step.get("process_id", ""),
+                "process_name": step["process_name"],
+                "process_group": step["process_group"],
+                "country": country if country != "Default" else "",
+                "material_mass_kg": round(step_mass, 4),
+                "energy_kwh": round(step_energy_kwh, 3),
+                "water_l": round(step_water_l, 2),
+                "carbon_kgco2e": round(step_carbon, 4),
+                "machines": step.get("default_machine_names", ""),
+                "machine_models": [item["machine_model"] for item in machine_breakdown if item["step_order"] == step["step_order"]],
+                "process_steps": [
+                    {"step_name": row["step_name"], "sequence": int(row["sequence"])}
+                    for row in process_steps
+                ],
+                "source_status": step.get("kg_source_status", ""),
+                "confidence": confidence_level(_as_float(step.get("confidence_prior"), 0.35)),
+            }
+        )
+
+    impact_totals = {key: round(totals[key], 3) for key in totals}
+    machine_tiers = [row.get("source_tier", "none") for row in machine_breakdown]
+    brochure_backed = sum(tier == "manufacturer" for tier in machine_tiers)
+    machine_proxies = len(machine_tiers) - brochure_backed
+    return {
+        "totals": impact_totals,
+        "process_breakdown": process_breakdown,
+        "machine_breakdown": machine_breakdown,
+        "activity_trace": activity_trace,
+        "chemical_inventory": {
+            chemical: round(value, 2)
+            for chemical, value in sorted(chemical_inventory.items())
+        },
+        "impact_data_quality": {
+            "energy": {
+                "status": "Brochure-backed" if machine_tiers and not machine_proxies else "Proxy estimate",
+                "label": f"{brochure_backed}/{len(machine_tiers)} selected machine profiles are brochure-approved; remaining profiles are proxies.",
+                "brochure_backed_count": brochure_backed,
+                "proxy_count": machine_proxies,
+            },
+            "water": {
+                "status": "Modelled proxy" if water_proxy_processes else "No water model applied",
+                "label": "Water is estimated from industry process-intensity models, not primary facility meter data."
+                if water_proxy_processes else "No route step had a water-intensity model.",
+                "proxy_processes": water_proxy_processes,
+            },
+            "chemicals": {
+                "status": "Emission-factor proxy" if chemical_inventory else "No chemical model applied",
+                "label": "Chemical quantities use modelled dosage and pending-validation embodied emission factors."
+                if chemical_inventory else "No route step had a chemical dosage model.",
+                "chemical_count": len(chemical_inventory),
+            },
+            "transport": {
+                "status": "Freight proxy" if totals["transport_carbon_kgco2e"] else "No transport leg modelled",
+                "label": "Transport uses GLEC freight proxy factors and route/default distances, pending primary logistics data."
+                if totals["transport_carbon_kgco2e"] else "No transport leg was modelled for this route.",
+            },
+        },
+    }

@@ -1,0 +1,47 @@
+recommender_id,machine_model_id,machine_category,origin_source
+M002,MMODR-001,Jet Dyeing Machine,machine_recommender/knowledge/clothing/machines.json
+M006,MMODR-002,Spreading Machine,machine_recommender/knowledge/clothing/machines.json
+M007,MMODR-003,Spreading Machine,machine_recommender/knowledge/clothing/machines.json
+M008,MMODR-004,CNC Fabric Cutter,machine_recommender/knowledge/clothing/machines.json
+M009,MMODR-005,CNC Fabric Cutter,machine_recommender/knowledge/clothing/machines.json
+M010,MMODR-006,CNC Fabric Cutter,machine_recommender/knowledge/clothing/machines.json
+M011,MMODR-007,CNC Fabric Cutter,machine_recommender/knowledge/clothing/machines.json
+M012,MMODR-008,CNC Fabric Cutter,machine_recommender/knowledge/clothing/machines.json
+M013,MMODR-009,Printing Machine,machine_recommender/knowledge/clothing/machines.json
+M014,MMODR-010,Printing Machine,machine_recommender/knowledge/clothing/machines.json
+M015,MMODR-011,Printing Machine,machine_recommender/knowledge/clothing/machines.json
+M016,MMODR-012,Printing Machine,machine_recommender/knowledge/clothing/machines.json
+M017,MMODR-013,Lockstitch Machine,machine_recommender/knowledge/clothing/machines.json
+M018,MMODR-014,Lockstitch Machine,machine_recommender/knowledge/clothing/machines.json
+M019,MMODR-015,Lockstitch Machine,machine_recommender/knowledge/clothing/machines.json
+M020,MMODR-016,Lockstitch Machine,machine_recommender/knowledge/clothing/machines.json
+M021,MMODR-017,Lockstitch Machine,machine_recommender/knowledge/clothing/machines.json
+M022,MMODR-018,Lockstitch Machine,machine_recommender/knowledge/clothing/machines.json
+M023,MMODR-019,Lockstitch Machine,machine_recommender/knowledge/clothing/machines.json
+M024,MMODR-020,Lockstitch Machine,machine_recommender/knowledge/clothing/machines.json
+M025,MMODR-021,Lockstitch Machine,machine_recommender/knowledge/clothing/machines.json
+M026,MMODR-022,Lockstitch Machine,machine_recommender/knowledge/clothing/machines.json
+M027,MMODR-023,Stenter Machine,machine_recommender/knowledge/clothing/machines.json
+M028,MMODR-024,Stenter Machine,machine_recommender/knowledge/clothing/machines.json
+M029,MMODR-025,Ironing Machine,machine_recommender/knowledge/clothing/machines.json
+M030,MMODR-026,Ironing Machine,machine_recommender/knowledge/clothing/machines.json
+M031,MMODR-027,Ironing Machine,machine_recommender/knowledge/clothing/machines.json
+M032,MMODR-028,Ironing Machine,machine_recommender/knowledge/clothing/machines.json
+M035,MMODR-029,Ring Frame,machine_recommender/knowledge/clothing/machines.json
+M036,MMODR-030,Ring Frame,machine_recommender/knowledge/clothing/machines.json
+M037,MMODR-031,Ring Frame,machine_recommender/knowledge/clothing/machines.json
+M038,MMODR-032,Ring Frame,machine_recommender/knowledge/clothing/machines.json
+M039,MMODR-033,Ring Frame,machine_recommender/knowledge/clothing/machines.json
+M040,MMODR-034,Jet Dyeing Machine,machine_recommender/knowledge/clothing/machines.json
+M041,MMODR-035,Lockstitch Machine,machine_recommender/knowledge/clothing/machines.json
+M042,MMODR-036,Lockstitch Machine,machine_recommender/knowledge/clothing/machines.json
+M043,MMODR-037,Washing Machine,machine_recommender/knowledge/clothing/machines.json
+M044,MMODR-038,Drying Machine,machine_recommender/knowledge/clothing/machines.json
+M045,MMODR-039,Washing Machine,machine_recommender/knowledge/clothing/machines.json
+M046,MMODR-040,Stenter Machine,machine_recommender/knowledge/clothing/machines.json
+M047,MMODR-041,Lockstitch Machine,machine_recommender/knowledge/clothing/machines.json
+M048,MMODR-042,Lockstitch Machine,machine_recommender/knowledge/clothing/machines.json
+M049,MMODR-043,Lockstitch Machine,machine_recommender/knowledge/clothing/machines.json
+M050,MMODR-044,Lockstitch Machine,machine_recommender/knowledge/clothing/machines.json
+M051,MMODR-045,Lockstitch Machine,machine_recommender/knowledge/clothing/machines.json
+M052,MMODR-046,Lockstitch Machine,machine_recommender/knowledge/clothing/machines.json

@@ -1,0 +1,418 @@
+{
+  "M001": {
+    "name": "Fabric Inspection Machine",
+    "category": "Inspection",
+    "description": "Machine used to inspect fabric for defects, stains, and quality issues before production",
+    "purpose": "Inspects fabric rolls for defects and ensures quality standards",
+    "automation": "Semi Automatic",
+    "applications": ["woven fabrics", "knitted fabrics", "denim", "cotton fabrics"]
+  },
+  "M002": {
+    "name": "Fabric Relaxing Machine",
+    "category": "Pre-treatment",
+    "description": "Machine that relaxes fabric tension and allows natural shrinkage before cutting",
+    "purpose": "Removes fabric tension and prevents shrinkage after cutting",
+    "automation": "Automatic",
+    "applications": ["knitted fabrics", "stretch fabrics"]
+  },
+  "M003": {
+    "name": "CAD Pattern Design Software",
+    "category": "Design",
+    "description": "Computer-aided design software for creating and grading garment patterns",
+    "purpose": "Creates digital patterns, grading, and marker planning",
+    "automation": "Fully Automatic",
+    "applications": ["all garment types"]
+  },
+  "M004": {
+    "name": "Plotter",
+    "category": "Design",
+    "description": "Large format printer used to print full-size pattern pieces on paper",
+    "purpose": "Prints physical pattern pieces for cutting",
+    "automation": "Semi Automatic",
+    "applications": ["all garment types"]
+  },
+  "M005": {
+    "name": "CAD Marker Software",
+    "category": "Design",
+    "description": "Software that optimizes fabric layout by arranging pattern pieces efficiently",
+    "purpose": "Optimizes fabric utilization by arranging patterns",
+    "automation": "Fully Automatic",
+    "applications": ["all garment types"]
+  },
+  "M006": {
+    "name": "Automatic Fabric Spreader",
+    "category": "Spreading",
+    "description": "Automated machine that spreads multiple plies of fabric evenly on the cutting table",
+    "purpose": "Spreads fabric layers evenly for bulk cutting",
+    "automation": "Fully Automatic",
+    "applications": ["woven fabrics", "knitted fabrics", "denim", "all fabrics"]
+  },
+  "M007": {
+    "name": "Manual Spreading Table",
+    "category": "Spreading",
+    "description": "Manual table used for hand-spreading fabric layers",
+    "purpose": "Manual alternative for fabric spreading in small batches",
+    "automation": "Manual",
+    "applications": ["small batches", "sample production"]
+  },
+  "M008": {
+    "name": "CNC Fabric Cutter",
+    "category": "Cutting",
+    "description": "Computer numerical control automatic cutting machine for precise fabric cutting",
+    "purpose": "Automatically cuts fabric layers with high precision",
+    "automation": "Fully Automatic",
+    "applications": ["woven fabrics", "knitted fabrics", "denim", "technical fabrics"]
+  },
+  "M009": {
+    "name": "Straight Knife Cutting Machine",
+    "category": "Cutting",
+    "description": "Manual straight-blade cutting machine for cutting multiple fabric layers",
+    "purpose": "Cuts multiple fabric layers with a vertical reciprocating blade",
+    "automation": "Semi Automatic",
+    "applications": ["woven fabrics", "denim", "cotton", "all fabrics"]
+  },
+  "M010": {
+    "name": "Band Knife Machine",
+    "category": "Cutting",
+    "description": "Stationary band saw machine for precision cutting of small parts and curved pieces",
+    "purpose": "Precision cutting of small and curved garment parts",
+    "automation": "Semi Automatic",
+    "applications": ["small parts", "curved cuts", "precision cutting"]
+  },
+  "M011": {
+    "name": "Die Cutting Machine",
+    "category": "Cutting",
+    "description": "Press machine using custom dies to cut specific shapes",
+    "purpose": "Cuts fabric using pre-shaped dies for repetitive identical pieces",
+    "automation": "Semi Automatic",
+    "applications": ["fusing materials", "lining", "interlining", "leather"]
+  },
+  "M012": {
+    "name": "Laser Cutting Machine",
+    "category": "Cutting",
+    "description": "High-precision laser cutter with sealed edges for synthetic and delicate fabrics",
+    "purpose": "Cuts and seals fabric edges simultaneously",
+    "automation": "Fully Automatic",
+    "applications": ["synthetic fabrics", "delicate fabrics", "polyester", "nylon"]
+  },
+  "M013": {
+    "name": "Screen Printing Machine",
+    "category": "Printing",
+    "description": "Automatic or manual screen printing machine for applying designs to fabric",
+    "purpose": "Prints designs using screen mesh and ink",
+    "automation": "Semi Automatic",
+    "applications": ["T-shirts", "polos", "hoodies", "cotton garments"]
+  },
+  "M014": {
+    "name": "DTG Printer",
+    "category": "Printing",
+    "description": "Direct-to-garment printer that prints full-color designs directly onto fabric",
+    "purpose": "Prints detailed full-color designs directly onto garments",
+    "automation": "Fully Automatic",
+    "applications": ["T-shirts", "polos", "small batch printing", "sample printing"]
+  },
+  "M015": {
+    "name": "Heat Transfer Machine",
+    "category": "Printing",
+    "description": "Heat press machine that transfers printed designs from transfer paper to fabric",
+    "purpose": "Transfers designs using heat and pressure",
+    "automation": "Semi Automatic",
+    "applications": ["T-shirts", "sportswear", "polyester garments", "small batches"]
+  },
+  "M016": {
+    "name": "Sublimation Printer",
+    "category": "Printing",
+    "description": "Printer using dye-sublimation process for permanent prints on polyester fabrics",
+    "purpose": "Creates permanent vibrant prints on polyester fabric",
+    "automation": "Fully Automatic",
+    "applications": ["sportswear", "polyester garments", "activewear"]
+  },
+  "M017": {
+    "name": "Multi-head Embroidery Machine",
+    "category": "Embroidery",
+    "description": "Industrial embroidery machine with multiple heads for simultaneous stitching",
+    "purpose": "Embroiders logos and designs on garments",
+    "automation": "Fully Automatic",
+    "applications": ["polo shirts", "uniforms", "caps", "jackets", "corporate wear"]
+  },
+  "M018": {
+    "name": "Single Head Embroidery Machine",
+    "category": "Embroidery",
+    "description": "Single-needle or multi-needle embroidery machine for small batches",
+    "purpose": "Embroiders designs for small batches and samples",
+    "automation": "Semi Automatic",
+    "applications": ["samples", "small batches", "custom orders"]
+  },
+  "M019": {
+    "name": "Single Needle Lockstitch Machine",
+    "category": "Sewing",
+    "description": "Industrial single-needle lockstitch sewing machine for general seaming",
+    "purpose": "Basic seaming, hemming, and general stitching",
+    "automation": "Semi Automatic",
+    "applications": ["woven garments", "shirts", "trousers", "general sewing"]
+  },
+  "M020": {
+    "name": "Overlock Machine",
+    "category": "Sewing",
+    "description": "Industrial overlock sewing machine that trims and finishes edges simultaneously",
+    "purpose": "Edge finishing, seam overlocking, and fabric trimming",
+    "automation": "Semi Automatic",
+    "applications": ["knitted garments", "T-shirts", "lingerie", "sportswear"]
+  },
+  "M021": {
+    "name": "Flatlock Machine",
+    "category": "Sewing",
+    "description": "Flat-bed interlock sewing machine for flat seams in knitwear",
+    "purpose": "Creates flat, comfortable seams for activewear and knitwear",
+    "automation": "Semi Automatic",
+    "applications": ["activewear", "sportswear", "underwear", "knitted garments"]
+  },
+  "M022": {
+    "name": "Button Hole Machine",
+    "category": "Sewing",
+    "description": "Automatic machine that cuts and stitches buttonholes",
+    "purpose": "Creates precise buttonholes automatically",
+    "automation": "Fully Automatic",
+    "applications": ["shirts", "blouses", "trousers", "jackets"]
+  },
+  "M023": {
+    "name": "Button Stitch Machine",
+    "category": "Sewing",
+    "description": "Automatic sewing machine for attaching buttons",
+    "purpose": "Sews buttons onto garments automatically",
+    "automation": "Fully Automatic",
+    "applications": ["shirts", "blouses", "trousers", "jackets"]
+  },
+  "M024": {
+    "name": "Zipper Attachment Machine",
+    "category": "Sewing",
+    "description": "Industrial machine with special foot for attaching zippers",
+    "purpose": "Attaches zippers to garments with precision",
+    "automation": "Semi Automatic",
+    "applications": ["trousers", "jeans", "jackets", "dresses", "skirts"]
+  },
+  "M025": {
+    "name": "Bartack Machine",
+    "category": "Sewing",
+    "description": "Automatic machine for reinforcing stress points with dense stitching",
+    "purpose": "Reinforces stress points like pockets, belt loops, and fly seams",
+    "automation": "Fully Automatic",
+    "applications": ["jeans", "trousers", "workwear", "uniforms"]
+  },
+  "M026": {
+    "name": "Feed-off-the-arm Machine",
+    "category": "Sewing",
+    "description": "Cylindrical bed sewing machine for sleeves and tubular parts",
+    "purpose": "Sews sleeve hems and tubular garment sections",
+    "automation": "Semi Automatic",
+    "applications": ["sleeves", "tubular garments", "T-shirts", "sweatshirts"]
+  },
+  "M027": {
+    "name": "Thread Trimmer",
+    "category": "Finishing",
+    "description": "Electric or pneumatic tool for trimming excess threads",
+    "purpose": "Trims loose threads for a clean finish",
+    "automation": "Manual",
+    "applications": ["all garment types"]
+  },
+  "M028": {
+    "name": "Automatic Thread Trimmer",
+    "category": "Finishing",
+    "description": "Automated thread trimming system for high-volume production",
+    "purpose": "Automatically trims threads at high speed",
+    "automation": "Fully Automatic",
+    "applications": ["mass production", "all garment types"]
+  },
+  "M029": {
+    "name": "Steam Iron",
+    "category": "Ironing",
+    "description": "Industrial steam iron for removing wrinkles and pressing garments",
+    "purpose": "Removes wrinkles and shapes garments during finishing",
+    "automation": "Manual",
+    "applications": ["all garment types"]
+  },
+  "M030": {
+    "name": "Vacuum Ironing Table",
+    "category": "Ironing",
+    "description": "Ironing board with vacuum suction that holds fabric in place",
+    "purpose": "Provides stable pressing surface with vacuum hold",
+    "automation": "Semi Automatic",
+    "applications": ["shirts", "trousers", "jackets", "formal wear"]
+  },
+  "M031": {
+    "name": "Steam Press Machine",
+    "category": "Ironing",
+    "description": "Industrial steam press for flat pressing of large garment sections",
+    "purpose": "Presses large flat garment sections efficiently",
+    "automation": "Semi Automatic",
+    "applications": ["shirts", "trousers", "uniforms", "bulk pressing"]
+  },
+  "M032": {
+    "name": "Finishing Tunnel",
+    "category": "Ironing",
+    "description": "Steam tunnel for finishing delicate fabrics without direct contact",
+    "purpose": "Finishes delicate fabrics using controlled steam",
+    "automation": "Fully Automatic",
+    "applications": ["silk", "delicate fabrics", "dresses", "high-end garments"]
+  },
+  "M033": {
+    "name": "Inspection Table",
+    "category": "Quality",
+    "description": "Illuminated table for manual inspection of finished garments",
+    "purpose": "Final quality inspection of finished garments for defects",
+    "automation": "Manual",
+    "applications": ["all garment types"]
+  },
+  "M034": {
+    "name": "Automatic Inspection System",
+    "category": "Quality",
+    "description": "Vision-based automated system that detects defects using cameras",
+    "purpose": "Automated defect detection using computer vision",
+    "automation": "Fully Automatic",
+    "applications": ["mass production", "high-volume manufacturing"]
+  },
+  "M035": {
+    "name": "Folding Machine",
+    "category": "Packaging",
+    "description": "Automatic or semi-automatic machine that folds garments consistently",
+    "purpose": "Folds garments to uniform size for packaging",
+    "automation": "Semi Automatic",
+    "applications": ["T-shirts", "shirts", "polos", "standardized garments"]
+  },
+  "M036": {
+    "name": "Manual Folding Table",
+    "category": "Packaging",
+    "description": "Table with guides for hand-folding garments",
+    "purpose": "Manual folding using measurement guides",
+    "automation": "Manual",
+    "applications": ["irregular garments", "small batches", "custom items"]
+  },
+  "M037": {
+    "name": "Poly Bag Packing Machine",
+    "category": "Packaging",
+    "description": "Machine that bags folded garments in poly bags",
+    "purpose": "Packs garments in poly bags for protection",
+    "automation": "Semi Automatic",
+    "applications": ["all garment types"]
+  },
+  "M038": {
+    "name": "Carton Sealing Machine",
+    "category": "Packaging",
+    "description": "Automatic carton sealing machine using tape",
+    "purpose": "Seals cardboard cartons for shipping",
+    "automation": "Semi Automatic",
+    "applications": ["all products"]
+  },
+  "M039": {
+    "name": "Shrink Wrap Machine",
+    "category": "Packaging",
+    "description": "Heat tunnel that shrinks plastic wrap around packaged products",
+    "purpose": "Wraps packages in protective shrink film",
+    "automation": "Fully Automatic",
+    "applications": ["bulk packaging", "multi-pack", "suit packaging"]
+  },
+  "M040": {
+    "name": "Fusing Machine",
+    "category": "Pre-treatment",
+    "description": "Heat press machine that bonds interlining to fabric",
+    "purpose": "Fuses interlining to fabric for stiffness and shape retention",
+    "automation": "Semi Automatic",
+    "applications": ["shirt collars", "cuffs", "jacket fronts", "formal wear"]
+  },
+  "M041": {
+    "name": "Label Printing Machine",
+    "category": "Trimming",
+    "description": "Printer for fabric care labels and brand tags",
+    "purpose": "Prints care labels, size tags, and brand labels",
+    "automation": "Fully Automatic",
+    "applications": ["all garment types"]
+  },
+  "M042": {
+    "name": "Label Attaching Machine",
+    "category": "Trimming",
+    "description": "Sewing or heat-seal machine for attaching labels to garments",
+    "purpose": "Attaches brand labels and care labels to garments",
+    "automation": "Semi Automatic",
+    "applications": ["all garment types"]
+  },
+  "M043": {
+    "name": "Washing Machine",
+    "category": "Washing",
+    "description": "Industrial washing machine for garment washing and finishing",
+    "purpose": "Washes garments for stone wash, enzyme wash, or rinse",
+    "automation": "Fully Automatic",
+    "applications": ["denim", "jeans", "casual wear", "garment washing"]
+  },
+  "M044": {
+    "name": "Dryer",
+    "category": "Drying",
+    "description": "Industrial tumble dryer for drying garments after washing",
+    "purpose": "Dries garments after washing or wet processing",
+    "automation": "Fully Automatic",
+    "applications": ["denim", "jeans", "all garment types"]
+  },
+  "M045": {
+    "name": "Stone Wash Machine",
+    "category": "Washing",
+    "description": "Industrial washer for stone-washing denim with pumice stones",
+    "purpose": "Creates stone-wash effect on denim garments",
+    "automation": "Fully Automatic",
+    "applications": ["denim jeans", "denim jackets", "denim skirts"]
+  },
+  "M046": {
+    "name": "Sandblasting Machine",
+    "category": "Finishing",
+    "description": "Machine that abrades fabric using sand or chemical spray for distressed effects",
+    "purpose": "Creates distressed or worn look on denim",
+    "automation": "Manual",
+    "applications": ["denim jeans", "denim jackets"]
+  },
+  "M047": {
+    "name": "Snap Fastener Machine",
+    "category": "Sewing",
+    "description": "Pneumatic or manual press for attaching snap fasteners and rivets",
+    "purpose": "Attaches snaps, rivets, and metal fasteners to garments",
+    "automation": "Semi Automatic",
+    "applications": ["jeans", "jackets", "trousers", "workwear"]
+  },
+  "M048": {
+    "name": "Elastic Attachment Machine",
+    "category": "Sewing",
+    "description": "Specialized sewing machine for attaching elastic bands",
+    "purpose": "Sews elastic bands into waistbands, cuffs, and leg openings",
+    "automation": "Semi Automatic",
+    "applications": ["trousers", "underwear", "sportswear", "lingerie"]
+  },
+  "M049": {
+    "name": "Interlock Stitch Machine",
+    "category": "Sewing",
+    "description": "Multi-thread machine for stretch seams in knitted fabrics",
+    "purpose": "Creates stretchable seams for knitted garments",
+    "automation": "Semi Automatic",
+    "applications": ["knitted garments", "T-shirts", "lingerie", "activewear"]
+  },
+  "M050": {
+    "name": "Blind Stitch Machine",
+    "category": "Sewing",
+    "description": "Sewing machine for invisible hemming",
+    "purpose": "Creates invisible hems on trousers, skirts, and dresses",
+    "automation": "Semi Automatic",
+    "applications": ["trousers", "skirts", "dresses", "formal wear"]
+  },
+  "M051": {
+    "name": "Eyelet Press Machine",
+    "category": "Trims Attachment",
+    "description": "Press machine for attaching metal or plastic eyelets",
+    "purpose": "Installs eyelets for drawcord exits and reinforced holes",
+    "automation": "Semi Automatic",
+    "applications": ["hoodies", "joggers", "shorts", "outerwear"]
+  },
+  "M052": {
+    "name": "Drawcord Inserting Machine",
+    "category": "Trims Attachment",
+    "description": "Machine or guided device used to insert drawcords through casings",
+    "purpose": "Inserts drawcords into hoods, waistbands, and hems",
+    "automation": "Semi Automatic",
+    "applications": ["hoodies", "joggers", "shorts", "sportswear"]
+  }
+}

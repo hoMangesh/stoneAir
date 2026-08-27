@@ -1,0 +1,4 @@
+factory_id,factory_name,country,region,supplier_id,certifications,capacity,version,effective_date,expiry_date,source,approval_status,confidence
+FAC001,Default Bangladesh Knit Factory,Bangladesh,Dhaka,SUP001,Unknown,100000 garments/month,0.1,2026-06-12,,Architecture_V2_seed,Pending Validation,0.4
+FAC002,Default Vietnam Performance Apparel Factory,Vietnam,Ho Chi Minh City,SUP002,Unknown,80000 garments/month,0.1,2026-06-12,,Architecture_V2_seed,Pending Validation,0.4
+FAC003,Default Vietnam Footwear Factory,Vietnam,Binh Duong,SUP004,Unknown,50000 pairs/month,0.1,2026-06-12,,Architecture_V2_seed,Pending Validation,0.35

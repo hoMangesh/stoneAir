@@ -1,0 +1,7 @@
+yield_id,process,yield_percent,waste_percent,confidence,version,effective_date,expiry_date,source,approval_status
+YLD001,Knitting,97,3,0.75,1.0,2026-06-12,,Manufacturing_Knowledge_Graph_V2,Approved
+YLD002,Dyeing,99,1,0.75,1.0,2026-06-12,,Manufacturing_Knowledge_Graph_V2,Approved
+YLD003,Cutting,85,15,0.75,1.0,2026-06-12,,Manufacturing_Knowledge_Graph_V2,Approved
+YLD004,Sewing,98,2,0.75,1.0,2026-06-12,,Manufacturing_Knowledge_Graph_V2,Approved
+YLD005,Weaving,96,4,0.45,0.1,2026-06-12,,Product_Template_Library_V1_assumption,Pending Validation
+YLD006,Cementing,98,2,0.35,0.1,2026-06-12,,Architecture_V2_seed,Pending Validation

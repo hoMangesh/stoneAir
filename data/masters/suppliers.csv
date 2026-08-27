@@ -1,0 +1,5 @@
+supplier_id,supplier_name,country,industry,tier,rating,confidence,version,effective_date,expiry_date,source,approval_status
+SUP001,Default Bangladesh Knit Supplier,Bangladesh,Apparel,Tier 1,B,0.45,0.1,2026-06-12,,Architecture_V2_seed,Pending Validation
+SUP002,Default Vietnam Performance Supplier,Vietnam,Apparel,Tier 1,B,0.45,0.1,2026-06-12,,Architecture_V2_seed,Pending Validation
+SUP003,Default China Material Supplier,China,Materials,Tier 2,B,0.4,0.1,2026-06-12,,Architecture_V2_seed,Pending Validation
+SUP004,Default Vietnam Footwear Supplier,Vietnam,Footwear,Tier 1,B,0.35,0.1,2026-06-12,,Architecture_V2_seed,Pending Validation

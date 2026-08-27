@@ -1,0 +1,7 @@
+consumable_id,name,unit,type,version,effective_date,expiry_date,source,approval_status,confidence
+CONS001,Electricity,kWh,Energy,1.0,2026-06-12,,Architecture_V2_domain_seed,Approved,0.9
+CONS002,Steam,kg,Energy,1.0,2026-06-12,,Architecture_V2_domain_seed,Approved,0.75
+CONS003,Compressed Air,m3,Utility,1.0,2026-06-12,,Architecture_V2_domain_seed,Approved,0.75
+CONS004,Water,L,Water,1.0,2026-06-12,,Architecture_V2_domain_seed,Approved,0.85
+CONS005,Diesel,L,Fuel,1.0,2026-06-12,,Architecture_V2_domain_seed,Approved,0.8
+CONS006,Natural Gas,m3,Fuel,1.0,2026-06-12,,Architecture_V2_domain_seed,Approved,0.8

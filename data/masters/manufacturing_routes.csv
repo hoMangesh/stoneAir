@@ -1,0 +1,9 @@
+route_id,route_name,product_type,industry,description,version,effective_date,expiry_date,source,approval_status,confidence
+ROUTE-APP-KNT-COTTON-001,Cotton knit apparel full route,T-Shirt/Polo/Sweatshirt/Hoodie,Apparel,Cotton farming through garment packaging for cotton-rich knit apparel,2.0,2026-06-12,,Route_Library_V2,Approved,0.9
+ROUTE-APP-KNT-SYNTH-001,Synthetic knit apparel route,Performance knit apparel,Apparel,Synthetic fiber production through cut-and-sew packaging,2.0,2026-06-12,,Route_Library_V2,Pending Validation,0.68
+ROUTE-APP-WVN-CELL-001,Woven cellulosic apparel route,Woven tops/bottoms/dresses,Apparel,"Cellulosic yarn spinning through weaving, wet processing, garmenting, and packaging",2.0,2026-06-12,,Route_Library_V2,Pending Validation,0.66
+ROUTE-APP-WVN-DENIM-001,Denim jeans route,Jeans,Apparel,"Cotton farming through indigo yarn dyeing, denim weaving, jeans sewing, laundry, and packaging",2.0,2026-06-12,,Route_Library_V2,Pending Validation,0.62
+ROUTE-APP-WVN-SYNTH-001,Synthetic woven outerwear route,Jacket,Apparel,Synthetic woven shell with optional coating and jacket assembly,2.0,2026-06-12,,Route_Library_V2,Pending Validation,0.52
+ROUTE-APP-KNT-HOSIERY-001,Hosiery sock route,Socks,Apparel,"Hosiery yarn preparation through knitting, toe closing, boarding, and packaging",2.0,2026-06-12,,Route_Library_V2,Pending Validation,0.44
+ROUTE-FW-SNK-CEMENT-001,Cemented sneaker and boot route,Sneaker/Running Shoe/Boot,Footwear,"Footwear upper preparation, sole molding, lasting, cementing, finishing, and packaging",2.0,2026-06-12,,Route_Library_V2,Pending Validation,0.36
+ROUTE-FW-SAN-CEMENT-001,Cemented sandal route,Sandal,Footwear,"Sandal strap preparation, sole molding, cementing, finishing, and packaging",2.0,2026-06-12,,Route_Library_V2,Pending Validation,0.36

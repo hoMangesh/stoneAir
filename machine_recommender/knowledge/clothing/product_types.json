@@ -1,0 +1,422 @@
+{
+  "t_shirt": {
+    "name": "T-Shirt",
+    "category": "Garments",
+    "construction": "cut_and_sew",
+    "typical_materials": ["cotton", "polyester", "jersey", "blend"],
+    "typical_features": ["neck_rib"],
+    "seam_types": ["overlock", "flatlock", "coverstitch"],
+    "processes": {
+      "mandatory_ids": ["fabric_inspection", "pattern_making", "marker_planning", "fabric_spreading", "fabric_cutting", "sewing", "trimming", "ironing", "quality_inspection", "folding", "packaging"],
+      "material_triggered": {
+        "knitted": ["fabric_relaxation"]
+      },
+      "default_material_structure": "knitted"
+    }
+  },
+  "polo_shirt": {
+    "name": "Polo Shirt",
+    "category": "Garments",
+    "construction": "cut_and_sew",
+    "typical_materials": ["cotton", "pique", "polyester"],
+    "typical_features": ["collar", "placket", "buttons"],
+    "seam_types": ["overlock", "flatlock", "lockstitch", "button_hole", "button_stitch"],
+    "processes": {
+      "mandatory_ids": ["fabric_inspection", "pattern_making", "marker_planning", "fabric_spreading", "fabric_cutting", "sewing", "trimming", "ironing", "quality_inspection", "folding", "packaging"],
+      "material_triggered": {
+        "knitted": ["fabric_relaxation"]
+      },
+      "default_material_structure": "knitted"
+    }
+  },
+  "formal_shirt": {
+    "name": "Formal Shirt",
+    "category": "Garments",
+    "construction": "cut_and_sew",
+    "typical_materials": ["cotton_woven", "polyester_woven", "linen"],
+    "typical_features": ["collar", "cuffs", "buttons", "placket"],
+    "seam_types": ["lockstitch", "button_hole", "button_stitch", "overlock", "blind_stitch"],
+    "processes": {
+      "mandatory_ids": ["fabric_inspection", "pattern_making", "marker_planning", "fabric_spreading", "fabric_cutting", "sewing", "trimming", "ironing", "quality_inspection", "folding", "packaging"],
+      "material_triggered": {
+        "woven": ["fusing"]
+      },
+      "default_material_structure": "woven"
+    }
+  },
+  "jeans": {
+    "name": "Jeans",
+    "category": "Garments",
+    "construction": "cut_and_sew",
+    "typical_materials": ["denim", "cotton_woven"],
+    "typical_features": ["zipper", "buttons", "pockets", "belt_loops", "rivets"],
+    "seam_types": ["lockstitch", "overlock", "bartack", "button_hole", "button_stitch", "zipper_attachment", "blind_stitch"],
+    "processes": {
+      "mandatory_ids": ["fabric_inspection", "pattern_making", "marker_planning", "fabric_spreading", "fabric_cutting", "sewing", "trimming", "ironing", "quality_inspection", "folding", "packaging"],
+      "material_triggered": {
+        "woven": [],
+        "denim_specific": ["washing", "drying"]
+      },
+      "default_material_structure": "woven"
+    }
+  },
+  "trousers": {
+    "name": "Trousers",
+    "category": "Garments",
+    "construction": "cut_and_sew",
+    "typical_materials": ["cotton_woven", "polyester_woven", "wool", "linen"],
+    "typical_features": ["zipper", "buttons", "pockets", "belt_loops"],
+    "seam_types": ["lockstitch", "overlock", "bartack", "button_hole", "button_stitch", "zipper_attachment", "blind_stitch"],
+    "processes": {
+      "mandatory_ids": ["fabric_inspection", "pattern_making", "marker_planning", "fabric_spreading", "fabric_cutting", "sewing", "trimming", "ironing", "quality_inspection", "folding", "packaging"],
+      "material_triggered": {
+        "woven": ["fusing"]
+      },
+      "default_material_structure": "woven"
+    }
+  },
+  "shorts": {
+    "name": "Shorts",
+    "category": "Garments",
+    "construction": "cut_and_sew",
+    "typical_materials": ["cotton", "cotton_woven", "polyester", "denim"],
+    "typical_features": ["pockets", "zipper", "elastic_waist"],
+    "seam_types": ["lockstitch", "overlock", "bartack", "zipper_attachment", "elastic_attachment"],
+    "processes": {
+      "mandatory_ids": ["fabric_inspection", "pattern_making", "marker_planning", "fabric_spreading", "fabric_cutting", "sewing", "trimming", "ironing", "quality_inspection", "folding", "packaging"],
+      "material_triggered": {
+        "knitted": ["fabric_relaxation"]
+      },
+      "default_material_structure": "woven"
+    }
+  },
+  "jacket": {
+    "name": "Jacket",
+    "category": "Outerwear",
+    "construction": "cut_and_sew",
+    "typical_materials": ["cotton_woven", "polyester_woven", "nylon", "denim", "leather", "wool"],
+    "typical_features": ["zipper", "buttons", "pockets", "lining", "hood"],
+    "seam_types": ["lockstitch", "overlock", "bartack", "button_hole", "button_stitch", "zipper_attachment", "blind_stitch"],
+    "processes": {
+      "mandatory_ids": ["fabric_inspection", "pattern_making", "marker_planning", "fabric_spreading", "fabric_cutting", "sewing", "trimming", "ironing", "quality_inspection", "folding", "packaging"],
+      "material_triggered": {
+        "woven": ["fusing"],
+        "denim_specific": ["washing", "drying"]
+      },
+      "default_material_structure": "woven"
+    }
+  },
+  "blazer": {
+    "name": "Blazer",
+    "category": "Outerwear",
+    "construction": "cut_and_sew",
+    "typical_materials": ["wool", "cotton_woven", "polyester_woven", "linen"],
+    "typical_features": ["buttons", "pockets", "lining", "collar", "cuffs"],
+    "seam_types": ["lockstitch", "button_hole", "button_stitch", "overlock", "blind_stitch", "bartack"],
+    "processes": {
+      "mandatory_ids": ["fabric_inspection", "pattern_making", "marker_planning", "fusing", "fabric_spreading", "fabric_cutting", "sewing", "trimming", "ironing", "quality_inspection", "folding", "packaging"],
+      "material_triggered": {},
+      "default_material_structure": "woven"
+    }
+  },
+  "hoodie": {
+    "name": "Hoodie",
+    "category": "Outerwear",
+    "construction": "cut_and_sew",
+    "typical_materials": ["fleece", "cotton", "polyester"],
+    "typical_features": ["hood", "pockets", "drawstrings", "rib_cuffs"],
+    "seam_types": ["overlock", "flatlock", "interlock", "lockstitch", "coverstitch", "feed_off_arm"],
+    "processes": {
+      "mandatory_ids": ["fabric_inspection", "pattern_making", "marker_planning", "fabric_spreading", "fabric_cutting", "sewing", "trimming", "ironing", "quality_inspection", "folding", "packaging"],
+      "material_triggered": {
+        "knitted": ["fabric_relaxation"]
+      },
+      "default_material_structure": "knitted"
+    }
+  },
+  "sweater": {
+    "name": "Sweater",
+    "category": "Garments",
+    "construction": "cut_and_sew",
+    "typical_materials": ["wool", "cotton", "fleece", "polyester"],
+    "typical_features": ["rib_cuffs"],
+    "seam_types": ["overlock", "flatlock", "interlock", "coverstitch", "feed_off_arm"],
+    "processes": {
+      "mandatory_ids": ["fabric_inspection", "pattern_making", "marker_planning", "fabric_spreading", "fabric_cutting", "sewing", "trimming", "ironing", "quality_inspection", "folding", "packaging"],
+      "material_triggered": {
+        "knitted": ["fabric_relaxation"]
+      },
+      "default_material_structure": "knitted"
+    }
+  },
+  "dress": {
+    "name": "Dress",
+    "category": "Garments",
+    "construction": "cut_and_sew",
+    "typical_materials": ["cotton", "silk", "polyester", "rayon", "linen", "wool"],
+    "typical_features": ["zipper", "buttons", "lining"],
+    "seam_types": ["lockstitch", "overlock", "zipper_attachment", "button_hole", "button_stitch", "blind_stitch"],
+    "processes": {
+      "mandatory_ids": ["fabric_inspection", "pattern_making", "marker_planning", "fabric_spreading", "fabric_cutting", "sewing", "trimming", "ironing", "quality_inspection", "folding", "packaging"],
+      "material_triggered": {
+        "knitted": ["fabric_relaxation"],
+        "woven": ["fusing"]
+      },
+      "default_material_structure": "woven"
+    }
+  },
+  "skirt": {
+    "name": "Skirt",
+    "category": "Garments",
+    "construction": "cut_and_sew",
+    "typical_materials": ["cotton_woven", "polyester_woven", "wool", "silk", "rayon"],
+    "typical_features": ["zipper", "buttons", "elastic_waist", "lining"],
+    "seam_types": ["lockstitch", "overlock", "zipper_attachment", "button_hole", "button_stitch", "elastic_attachment", "blind_stitch"],
+    "processes": {
+      "mandatory_ids": ["fabric_inspection", "pattern_making", "marker_planning", "fabric_spreading", "fabric_cutting", "sewing", "trimming", "ironing", "quality_inspection", "folding", "packaging"],
+      "material_triggered": {
+        "knitted": ["fabric_relaxation"],
+        "woven": ["fusing"]
+      },
+      "default_material_structure": "woven"
+    }
+  },
+  "leggings": {
+    "name": "Leggings",
+    "category": "Garments",
+    "construction": "cut_and_sew",
+    "typical_materials": ["polyester", "spandex", "nylon", "cotton"],
+    "typical_features": ["elastic_waist"],
+    "seam_types": ["overlock", "flatlock", "interlock", "elastic_attachment", "coverstitch"],
+    "processes": {
+      "mandatory_ids": ["fabric_inspection", "pattern_making", "marker_planning", "fabric_spreading", "fabric_cutting", "sewing", "trimming", "ironing", "quality_inspection", "folding", "packaging"],
+      "material_triggered": {
+        "knitted": ["fabric_relaxation"]
+      },
+      "default_material_structure": "knitted"
+    }
+  },
+  "swimwear": {
+    "name": "Swimwear",
+    "category": "Garments",
+    "construction": "cut_and_sew",
+    "typical_materials": ["polyester", "nylon", "spandex"],
+    "typical_features": ["elastic_waist", "lining"],
+    "seam_types": ["overlock", "flatlock", "lockstitch", "elastic_attachment", "coverstitch"],
+    "processes": {
+      "mandatory_ids": ["fabric_inspection", "pattern_making", "marker_planning", "fabric_spreading", "fabric_cutting", "sewing", "trimming", "ironing", "quality_inspection", "folding", "packaging"],
+      "material_triggered": {
+        "knitted": ["fabric_relaxation"]
+      },
+      "default_material_structure": "knitted"
+    }
+  },
+  "uniform": {
+    "name": "Uniform",
+    "category": "Garments",
+    "construction": "cut_and_sew",
+    "typical_materials": ["cotton_woven", "polyester_woven", "cotton"],
+    "typical_features": ["buttons", "pockets", "collar", "cuffs"],
+    "seam_types": ["lockstitch", "overlock", "button_hole", "button_stitch", "bartack", "blind_stitch"],
+    "processes": {
+      "mandatory_ids": ["fabric_inspection", "pattern_making", "marker_planning", "fabric_spreading", "fabric_cutting", "sewing", "trimming", "ironing", "quality_inspection", "folding", "packaging"],
+      "material_triggered": {
+        "woven": ["fusing"],
+        "knitted": ["fabric_relaxation"]
+      },
+      "default_material_structure": "woven"
+    }
+  },
+  "lingerie": {
+    "name": "Lingerie",
+    "category": "Intimate Apparel",
+    "construction": "cut_and_sew",
+    "typical_materials": ["polyester", "nylon", "cotton", "spandex"],
+    "typical_features": ["elastic_waist", "lace", "straps"],
+    "seam_types": ["overlock", "flatlock", "lockstitch", "elastic_attachment", "coverstitch"],
+    "processes": {
+      "mandatory_ids": ["fabric_inspection", "pattern_making", "marker_planning", "fabric_spreading", "fabric_cutting", "sewing", "trimming", "ironing", "quality_inspection", "folding", "packaging"],
+      "material_triggered": {
+        "knitted": ["fabric_relaxation"]
+      },
+      "default_material_structure": "knitted"
+    }
+  },
+  "sleepwear": {
+    "name": "Sleepwear",
+    "category": "Garments",
+    "construction": "cut_and_sew",
+    "typical_materials": ["cotton", "polyester", "silk"],
+    "typical_features": ["buttons", "elastic_waist"],
+    "seam_types": ["lockstitch", "overlock", "button_hole", "button_stitch", "elastic_attachment", "blind_stitch"],
+    "processes": {
+      "mandatory_ids": ["fabric_inspection", "pattern_making", "marker_planning", "fabric_spreading", "fabric_cutting", "sewing", "trimming", "ironing", "quality_inspection", "folding", "packaging"],
+      "material_triggered": {
+        "knitted": ["fabric_relaxation"]
+      },
+      "default_material_structure": "woven"
+    }
+  },
+  "raincoat": {
+    "name": "Raincoat",
+    "category": "Outerwear",
+    "construction": "cut_and_sew",
+    "typical_materials": ["nylon", "polyester_woven", "coated_fabric"],
+    "typical_features": ["zipper", "hood", "pockets"],
+    "seam_types": ["lockstitch", "overlock", "zipper_attachment", "bartack"],
+    "processes": {
+      "mandatory_ids": ["fabric_inspection", "pattern_making", "marker_planning", "fabric_spreading", "fabric_cutting", "sewing", "trimming", "ironing", "quality_inspection", "folding", "packaging"],
+      "material_triggered": {},
+      "default_material_structure": "woven"
+    }
+  },
+  "vest": {
+    "name": "Vest",
+    "category": "Outerwear",
+    "construction": "cut_and_sew",
+    "typical_materials": ["nylon", "polyester_woven", "fleece", "cotton_woven"],
+    "typical_features": ["zipper", "pockets"],
+    "seam_types": ["lockstitch", "overlock", "zipper_attachment", "bartack", "blind_stitch"],
+    "processes": {
+      "mandatory_ids": ["fabric_inspection", "pattern_making", "marker_planning", "fabric_spreading", "fabric_cutting", "sewing", "trimming", "ironing", "quality_inspection", "folding", "packaging"],
+      "material_triggered": {},
+      "default_material_structure": "woven"
+    }
+  },
+  "cap": {
+    "name": "Cap",
+    "category": "Accessories",
+    "construction": "cut_and_sew",
+    "typical_materials": ["cotton_woven", "polyester_woven", "cotton"],
+    "typical_features": ["snaps", "buttons", "eyelets"],
+    "seam_types": ["lockstitch", "overlock", "bartack", "button_hole"],
+    "processes": {
+      "mandatory_ids": ["fabric_inspection", "pattern_making", "marker_planning", "fabric_cutting", "sewing", "trimming", "ironing", "quality_inspection", "folding", "packaging"],
+      "material_triggered": {},
+      "default_material_structure": "woven"
+    }
+  },
+  "tie": {
+    "name": "Tie",
+    "category": "Accessories",
+    "construction": "cut_and_sew",
+    "typical_materials": ["silk", "polyester_woven", "cotton_woven"],
+    "typical_features": ["lining", "interlining"],
+    "seam_types": ["lockstitch", "blind_stitch"],
+    "processes": {
+      "mandatory_ids": ["fabric_inspection", "pattern_making", "marker_planning", "fabric_cutting", "fusing", "sewing", "trimming", "ironing", "quality_inspection", "folding", "packaging"],
+      "material_triggered": {},
+      "default_material_structure": "woven"
+    }
+  },
+  "scarf": {
+    "name": "Scarf",
+    "category": "Accessories",
+    "construction": "cut_and_sew",
+    "typical_materials": ["wool", "silk", "cotton", "polyester"],
+    "typical_features": [],
+    "seam_types": ["overlock", "lockstitch"],
+    "processes": {
+      "mandatory_ids": ["fabric_inspection", "pattern_making", "marker_planning", "fabric_cutting", "trimming", "quality_inspection", "folding", "packaging"],
+      "material_triggered": {},
+      "default_material_structure": "woven"
+    }
+  },
+  "tote_bag": {
+    "name": "Tote Bag",
+    "category": "Accessories",
+    "construction": "cut_and_sew",
+    "typical_materials": ["cotton_woven", "cotton", "polyester_woven"],
+    "typical_features": ["zipper"],
+    "seam_types": ["lockstitch", "overlock", "bartack", "zipper_attachment"],
+    "processes": {
+      "mandatory_ids": ["fabric_inspection", "pattern_making", "marker_planning", "fabric_cutting", "sewing", "trimming", "quality_inspection", "folding", "packaging"],
+      "material_triggered": {},
+      "default_material_structure": "woven"
+    }
+  },
+  "apron": {
+    "name": "Apron",
+    "category": "Accessories",
+    "construction": "cut_and_sew",
+    "typical_materials": ["cotton_woven", "polyester_woven"],
+    "typical_features": ["pockets"],
+    "seam_types": ["lockstitch", "overlock", "bartack"],
+    "processes": {
+      "mandatory_ids": ["fabric_inspection", "pattern_making", "marker_planning", "fabric_cutting", "sewing", "trimming", "ironing", "quality_inspection", "folding", "packaging"],
+      "material_triggered": {},
+      "default_material_structure": "woven"
+    }
+  },
+  "kurti": {
+    "name": "Kurti",
+    "category": "Garments",
+    "construction": "cut_and_sew",
+    "typical_materials": ["cotton_woven", "cotton", "silk", "rayon"],
+    "typical_features": ["buttons", "pockets"],
+    "seam_types": ["lockstitch", "overlock", "button_hole", "button_stitch", "blind_stitch"],
+    "processes": {
+      "mandatory_ids": ["fabric_inspection", "pattern_making", "marker_planning", "fabric_spreading", "fabric_cutting", "sewing", "trimming", "ironing", "quality_inspection", "folding", "packaging"],
+      "material_triggered": {
+        "knitted": ["fabric_relaxation"]
+      },
+      "default_material_structure": "woven"
+    }
+  },
+  "romper": {
+    "name": "Romper",
+    "category": "Baby & Kids",
+    "construction": "cut_and_sew",
+    "typical_materials": ["cotton", "jersey", "polyester"],
+    "typical_features": ["buttons", "elastic_waist", "snaps"],
+    "seam_types": ["overlock", "flatlock", "lockstitch", "button_hole", "button_stitch", "elastic_attachment"],
+    "processes": {
+      "mandatory_ids": ["fabric_inspection", "pattern_making", "marker_planning", "fabric_spreading", "fabric_cutting", "sewing", "trimming", "ironing", "quality_inspection", "folding", "packaging"],
+      "material_triggered": {
+        "knitted": ["fabric_relaxation"]
+      },
+      "default_material_structure": "knitted"
+    }
+  },
+  "belt": {
+    "name": "Belt",
+    "category": "Accessories",
+    "construction": "cut_and_sew",
+    "typical_materials": ["leather", "cotton_woven", "nylon"],
+    "typical_features": ["buckle"],
+    "seam_types": ["lockstitch", "bartack"],
+    "processes": {
+      "mandatory_ids": ["fabric_inspection", "pattern_making", "marker_planning", "fabric_cutting", "sewing", "trimming", "ironing", "quality_inspection", "folding", "packaging"],
+      "material_triggered": {},
+      "default_material_structure": "woven"
+    }
+  },
+  "socks": {
+    "name": "Socks",
+    "category": "Accessories",
+    "construction": "cut_and_sew",
+    "typical_materials": ["cotton", "polyester", "wool", "nylon"],
+    "typical_features": [],
+    "seam_types": ["overlock", "lockstitch"],
+    "processes": {
+      "mandatory_ids": ["fabric_inspection", "pattern_making", "marker_planning", "fabric_cutting", "sewing", "trimming", "quality_inspection", "folding", "packaging"],
+      "material_triggered": {
+        "knitted": ["fabric_relaxation"]
+      },
+      "default_material_structure": "knitted"
+    }
+  },
+  "gloves": {
+    "name": "Gloves",
+    "category": "Accessories",
+    "construction": "cut_and_sew",
+    "typical_materials": ["cotton", "polyester", "leather", "wool", "nylon"],
+    "typical_features": [],
+    "seam_types": ["overlock", "lockstitch", "blind_stitch"],
+    "processes": {
+      "mandatory_ids": ["fabric_inspection", "pattern_making", "marker_planning", "fabric_cutting", "sewing", "trimming", "ironing", "quality_inspection", "folding", "packaging"],
+      "material_triggered": {},
+      "default_material_structure": "woven"
+    }
+  }
+}

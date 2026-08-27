@@ -1,0 +1,8 @@
+factory_id,machine_model_id,quantity,start_date,end_date,version,effective_date,expiry_date,source,approval_status,confidence
+FAC001,MMOD001,2,2026-01-01,,0.1,2026-06-12,,Architecture_V2_seed,Pending Validation,0.35
+FAC001,MMOD002,12,2026-01-01,,0.1,2026-06-12,,Architecture_V2_seed,Pending Validation,0.35
+FAC001,MMOD003,4,2026-01-01,,0.1,2026-06-12,,Architecture_V2_seed,Pending Validation,0.35
+FAC001,MMOD004,80,2026-01-01,,0.1,2026-06-12,,Architecture_V2_seed,Pending Validation,0.35
+FAC002,MMOD002,10,2026-01-01,,0.1,2026-06-12,,Architecture_V2_seed,Pending Validation,0.35
+FAC002,MMOD004,65,2026-01-01,,0.1,2026-06-12,,Architecture_V2_seed,Pending Validation,0.35
+FAC003,MMOD004,40,2026-01-01,,0.1,2026-06-12,,Architecture_V2_seed,Pending Validation,0.3

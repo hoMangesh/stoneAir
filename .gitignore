@@ -1,0 +1,36 @@
+# --- Python ---
+__pycache__/
+*.py[cod]
+*.egg-info/
+.venv/
+venv/
+.pytest_cache/
+.mypy_cache/
+.ruff_cache/
+*.db-journal
+
+# --- Node / frontend build ---
+node_modules/
+frontend/dist/
+
+# --- macOS ---
+.DS_Store
+**/.DS_Store
+
+# --- Runtime persistence (never hand-edit; masters are the source of truth) ---
+# data/calculations/ and data/inference/ are generated at analyze time
+# (SQLite lca_intelligence.db + CSV fallbacks). Keep the dirs but not content.
+data/calculations/*
+!data/calculations/.gitkeep
+data/inference/*
+!data/inference/.gitkeep
+
+# --- Fetched brochure artifacts (keep dir via .gitkeep, ignore downloaded PDFs) ---
+machine_analyzer/downloads/*
+!machine_analyzer/downloads/.gitkeep
+
+# --- Misc ---
+.env
+.env.*
+*.log
+Terminal Saved Output.txt

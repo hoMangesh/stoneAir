@@ -1,0 +1,18 @@
+factor_id,activity_type,country,factor,unit,effective_date,source,version,expiry_date,approval_status,confidence
+EF-ELEC-IND-2026,Electricity,India,0.71,kgCO2e/kWh,2026-06-12,Architecture_V2_seed_grid_factor,0.1,,Pending Validation,0.5
+EF-ELEC-BGD-2026,Electricity,Bangladesh,0.62,kgCO2e/kWh,2026-06-12,Architecture_V2_seed_grid_factor,0.1,,Pending Validation,0.5
+EF-ELEC-CHN-2026,Electricity,China,0.58,kgCO2e/kWh,2026-06-12,Architecture_V2_seed_grid_factor,0.1,,Pending Validation,0.5
+EF-ELEC-VNM-2026,Electricity,Vietnam,0.47,kgCO2e/kWh,2026-06-12,Architecture_V2_seed_grid_factor,0.1,,Pending Validation,0.5
+EF-ELEC-TUR-2026,Electricity,Turkey,0.42,kgCO2e/kWh,2026-06-12,Architecture_V2_seed_grid_factor,0.1,,Pending Validation,0.5
+EF-ELEC-DEF-2026,Electricity,Default,0.55,kgCO2e/kWh,2026-06-12,Architecture_V2_seed_grid_factor,0.1,,Pending Validation,0.35
+EF-CHEM-REACTIVE-DYE-2026,Chemical,Default,2.1,kgCO2e/kg,2026-06-12,Industry_average_embodied_emission_proxy,0.1,,Pending Validation,0.3
+EF-CHEM-SALT-2026,Chemical,Default,0.13,kgCO2e/kg,2026-06-12,Industry_average_embodied_emission_proxy,0.1,,Pending Validation,0.3
+EF-CHEM-CAUSTIC-SODA-2026,Chemical,Default,1.1,kgCO2e/kg,2026-06-12,Industry_average_embodied_emission_proxy,0.1,,Pending Validation,0.3
+EF-CHEM-SODA-ASH-2026,Chemical,Default,0.5,kgCO2e/kg,2026-06-12,Industry_average_embodied_emission_proxy,0.1,,Pending Validation,0.3
+EF-CHEM-SOFTENER-2026,Chemical,Default,2.4,kgCO2e/kg,2026-06-12,Industry_average_embodied_emission_proxy,0.1,,Pending Validation,0.3
+EF-CHEM-WETTING-AGENT-2026,Chemical,Default,1.5,kgCO2e/kg,2026-06-12,Industry_average_embodied_emission_proxy,0.1,,Pending Validation,0.3
+EF-TRANS-TRUCK-2026,Transport,Truck,0.00011,kgCO2e/ton-km,2026-06-12,GLEC_Freight_Framework_v3_default,0.1,,Pending Validation,0.4
+EF-TRANS-RAIL-2026,Transport,Rail,0.00003,kgCO2e/ton-km,2026-06-12,GLEC_Freight_Framework_v3_default,0.1,,Pending Validation,0.4
+EF-TRANS-OCEAN-2026,Transport,Ocean Freight,0.000016,kgCO2e/ton-km,2026-06-12,GLEC_Freight_Framework_v3_default,0.1,,Pending Validation,0.4
+EF-TRANS-AIR-2026,Transport,Air Freight,0.0006,kgCO2e/ton-km,2026-06-12,GLEC_Freight_Framework_v3_default,0.1,,Pending Validation,0.4
+EF-TRANS-DEF-2026,Transport,Default,0.00011,kgCO2e/ton-km,2026-06-12,GLEC_Freight_Framework_v3_default,0.1,,Pending Validation,0.3

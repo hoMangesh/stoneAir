@@ -1,0 +1,14 @@
+material_id,material_name,material_family,material_category,renewable,recycled_content,default_origin,density,version,effective_date,expiry_date,source,approval_status,confidence
+MAT001,Cotton,Cellulosic,Natural Fiber,Yes,0,India,,1.0,2026-06-12,,Manufacturing_Knowledge_Graph_V1,Approved,0.85
+MAT002,Organic Cotton,Cellulosic,Natural Fiber,Yes,0,India,,1.0,2026-06-12,,Manufacturing_Knowledge_Graph_V1,Approved,0.85
+MAT003,Recycled Cotton,Cellulosic,Recycled Fiber,Yes,70,Global,,1.0,2026-06-12,,Manufacturing_Knowledge_Graph_V1,Approved,0.75
+MAT004,Polyester,Petrochemical,Synthetic Fiber,No,0,China,,1.0,2026-06-12,,Manufacturing_Knowledge_Graph_V1,Approved,0.8
+MAT005,Recycled Polyester,Petrochemical,Recycled Fiber,No,90,Global,,1.0,2026-06-12,,Manufacturing_Knowledge_Graph_V1,Approved,0.78
+MAT006,Elastane,Polymer,Synthetic Fiber,No,0,China,,1.0,2026-06-12,,Manufacturing_Knowledge_Graph_V1,Approved,0.78
+MAT007,Viscose,Cellulosic,Regenerated Fiber,Yes,0,Indonesia,,1.0,2026-06-12,,Manufacturing_Knowledge_Graph_V1,Approved,0.75
+MAT008,Modal,Cellulosic,Regenerated Fiber,Yes,0,Austria,,1.0,2026-06-12,,Manufacturing_Knowledge_Graph_V1,Approved,0.75
+MAT009,Lyocell,Cellulosic,Regenerated Fiber,Yes,0,Austria,,1.0,2026-06-12,,Manufacturing_Knowledge_Graph_V1,Approved,0.75
+MAT010,Hemp,Bast Fiber,Natural Fiber,Yes,0,China,,1.0,2026-06-12,,Manufacturing_Knowledge_Graph_V1,Approved,0.72
+MAT011,Leather,Animal Hide,Natural Material,Yes,0,Global,,0.1,2026-06-12,,Architecture_V2_seed,Pending Validation,0.35
+MAT012,EVA,Polymer,Foam,No,0,China,,0.1,2026-06-12,,Architecture_V2_seed,Pending Validation,0.35
+MAT013,Rubber,Polymer,Footwear Sole Material,No,0,Vietnam,,0.1,2026-06-12,,Architecture_V2_seed,Pending Validation,0.35

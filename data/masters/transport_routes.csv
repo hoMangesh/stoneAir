@@ -1,0 +1,5 @@
+origin,destination,distance,mode,confidence,version,effective_date,expiry_date,source,approval_status
+India,Bangladesh,1600,Truck,0.35,0.1,2026-06-12,,Architecture_V2_seed,Pending Validation
+Bangladesh,United States,13900,Ocean Freight,0.3,0.1,2026-06-12,,Architecture_V2_seed,Pending Validation
+China,Vietnam,1300,Truck,0.3,0.1,2026-06-12,,Architecture_V2_seed,Pending Validation
+Vietnam,United States,13500,Ocean Freight,0.3,0.1,2026-06-12,,Architecture_V2_seed,Pending Validation

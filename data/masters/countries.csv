@@ -1,0 +1,6 @@
+country_id,country_name,grid_factor,water_factor,transport_factor,effective_date,version,expiry_date,source,approval_status,confidence
+CTY001,India,0.71,1.0,1.0,2026-06-12,0.1,,Architecture_V2_seed_with_KG_country_defaults,Pending Validation,0.5
+CTY002,Bangladesh,0.62,1.1,1.0,2026-06-12,0.1,,Architecture_V2_seed_with_KG_country_defaults,Pending Validation,0.5
+CTY003,China,0.58,1.0,1.0,2026-06-12,0.1,,Architecture_V2_seed_with_KG_country_defaults,Pending Validation,0.5
+CTY004,Vietnam,0.47,1.0,1.0,2026-06-12,0.1,,Architecture_V2_seed_with_KG_country_defaults,Pending Validation,0.5
+CTY005,Turkey,0.42,0.9,1.0,2026-06-12,0.1,,Architecture_V2_seed_with_KG_country_defaults,Pending Validation,0.5
